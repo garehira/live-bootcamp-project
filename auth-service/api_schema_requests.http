@@ -1,0 +1,48 @@
+# @env=dev
+###
+GET http://{{baseUrl}}
+
+###
+POST http://{{baseUrl}}/signup
+Content-Type: application/json
+
+{
+  "email": "",
+  "password": "",
+  "requires2FA": false
+}
+
+###
+# @env=dev
+POST http://{{baseUrl}}/login
+Content-Type: application/json
+
+{
+  "email": "",
+  "password": ""
+}
+
+<> 2025-10-08T170516.200.html
+
+###
+POST http://{{baseUrl}}/verify-2fa
+Content-Type: application/json
+
+{
+  "email": "",
+  "loginAttemptId": "",
+  "2FACode": ""
+}
+
+<> 2025-10-08T165725.404.html
+
+###
+POST http://{{baseUrl}}/logout
+
+###
+POST http://{{baseUrl}}/verify-token
+Content-Type: application/json
+
+{
+  "token": ""
+}
