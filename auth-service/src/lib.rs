@@ -1,10 +1,11 @@
 use std::error::Error;
-use axum::http::StatusCode;
-use axum::response::{Html, IntoResponse};
 use axum::Router;
 use axum::routing::{ post};
 use axum::serve::Serve;
 use tower_http::services::ServeDir;
+use crate::routes::{login, logout, signup, verify_2fa, verify_token};
+
+pub mod routes;
 
 // This struct encapsulates our application-related logic.
 pub struct Application {
@@ -43,19 +44,3 @@ impl Application {
     }
 }
 
-
-async fn login() -> Html<&'static str> {
-    Html("<h1>Hello, World!</h1>")
-}
-async fn verify_2fa() -> impl IntoResponse {
-    StatusCode::OK.into_response()
-}
-async fn signup() -> impl IntoResponse {
-    StatusCode::OK.into_response()
-}
-async fn logout() -> impl IntoResponse {
-    StatusCode::OK.into_response()
-}
-async fn verify_token() -> impl IntoResponse {
-    StatusCode::OK.into_response()
-}
