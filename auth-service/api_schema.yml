@@ -6,8 +6,8 @@ info:
   version: 1.0.0
 
 servers:
-  - url: '{{baseUrl}}'
-    description: Main server
+  - url: 'https://127.0.0.1:3000'
+    description: Local server
 
 paths:
   /:
@@ -81,7 +81,7 @@ paths:
                 properties:
                   error:
                     type: string
-          
+
   /login:
     post:
       summary: Authenticate user and return JWT
