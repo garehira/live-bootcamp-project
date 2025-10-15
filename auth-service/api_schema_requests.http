@@ -7,8 +7,18 @@ POST http://{{baseUrl}}/signup
 Content-Type: application/json
 
 {
-  "email": "reter",
-  "password": "ertert",
+  "email": "ret@er",
+  "password": "erasdtert",
+  "requires2FA": false
+}
+
+###
+POST http://{{baseUrl}}/signup
+Content-Type: application/json
+
+{
+  "email": "peter@pan.com",
+  "password": "erfghtert",
   "requires2FA": false
 }
 
