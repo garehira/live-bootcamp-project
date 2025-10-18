@@ -47,7 +47,7 @@ async fn should_return_201_if_valid_input() {
         }),
         serde_json::json!({
             "email": get_random_email(),
-            "password": "pass",
+            "password": "passwordisvalid",
             "requires2FA": false
         }),
     ];

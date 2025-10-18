@@ -1,21 +1,14 @@
-use std::collections::HashMap;
-
+use crate::domain::data_stores::{UserStore, UserStoreError};
 use crate::domain::user::User;
-
-#[derive(Debug, PartialEq)]
-pub enum UserStoreError {
-    UserAlreadyExists,
-    UserNotFound,
-    InvalidCredentials,
-    UnexpectedError,
-}
+use std::collections::HashMap;
 
 #[derive(Default)]
 pub struct HashmapUserStore {
     users: HashMap<String, User>,
 }
-impl HashmapUserStore {
-    pub fn add_user(&mut self, user: User) -> Result<(), UserStoreError> {
+#[async_trait::async_trait]
+impl UserStore for HashmapUserStore {
+    async fn add_user(&mut self, user: User) -> Result<(), UserStoreError> {
         // Return `UserStoreError::UserAlreadyExists` if the user already exists,
         // otherwise insert the user into the hashmap and return `Ok(())`.
         if self.users.contains_key(&user.email) {
@@ -25,11 +18,11 @@ impl HashmapUserStore {
         Ok(())
     }
 
-    pub fn get_user(&self, email: String) -> Result<&User, UserStoreError> {
+    async fn get_user(&self, email: String) -> Result<&User, UserStoreError> {
         self.users.get(&email).ok_or(UserStoreError::UserNotFound)
     }
-    pub fn validate_user(&self, email: &str, password: &str) -> Result<(), UserStoreError> {
-        let user = self.get_user(email.to_string())?;
+    async fn validate_user(&self, email: &str, password: &str) -> Result<(), UserStoreError> {
+        let user = self.get_user(email.to_string()).await?;
         if user.password == password {
             Ok(())
         } else {
@@ -42,65 +35,69 @@ impl HashmapUserStore {
 pub mod tests {
     use super::*;
 
-    pub fn test_data() -> HashmapUserStore {
+    pub async fn test_data() -> HashmapUserStore {
         let mut store = HashmapUserStore::default();
         let user = User::new(
             "herbert@email.com".to_string(),
             "password".to_string(),
             true,
         );
-        store.add_user(user).unwrap();
+        store.add_user(user).await.unwrap();
         let user = User::new(
             "hubert@email.com".to_string(),
             "password2".to_string(),
             true,
         );
-        store.add_user(user).unwrap();
+        store.add_user(user).await.unwrap();
         let user = User::new(
             "hermann@email.com".to_string(),
             "password3".to_string(),
             true,
         );
-        store.add_user(user).unwrap();
+        store.add_user(user).await.unwrap();
         store
     }
     #[tokio::test]
     async fn test_add_user() {
-        let mut hm = test_data();
+        let mut hm = test_data().await;
         hm.add_user(User::new(
             "herbert222@email.com".to_string(),
             "password".to_string(),
             true,
         ))
+        .await
         .expect("Failed to add user");
 
-        assert!(matches!(
-            hm.add_user(User::new(
+        let res = hm
+            .add_user(User::new(
                 "herbert@email.com".to_string(),
                 "password".to_string(),
                 true,
-            )),
-            Err(UserStoreError::UserAlreadyExists)
-        ));
+            ))
+            .await;
+        assert!(matches!(res, Err(UserStoreError::UserAlreadyExists)));
     }
     #[tokio::test]
     async fn test_get_user() {
         let hm = test_data();
-        hm.get_user("hermann@email.com".to_string())
+        hm.await
+            .get_user("hermann@email.com".to_string())
+            .await
             .expect("Failed to get user");
     }
 
     #[tokio::test]
     async fn test_validate_user() {
-        let data = test_data();
+        let data = test_data().await;
         data.validate_user("hermann@email.com", "password3")
+            .await
             .expect("Failed to validate user");
         assert!(matches!(
-            data.validate_user("notfound@email.com", "password3"),
+            data.validate_user("notfound@email.com", "password3").await,
             Err(UserStoreError::UserNotFound)
         ));
         assert!(matches!(
-            data.validate_user("hermann@email.com", "password4"),
+            data.validate_user("hermann@email.com", "password4").await,
             Err(UserStoreError::InvalidCredentials)
         ));
     }

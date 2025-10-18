@@ -33,11 +33,11 @@ pub async fn signup(
 
     let mut user_store = state.user_store.write().await;
 
-    if user_store.get_user(email).is_ok() {
+    if user_store.get_user(email).await.is_ok() {
         return AuthAPIError::UserAlreadyExists.into_response();
     }
 
-    if user_store.add_user(user).is_err() {
+    if user_store.add_user(user).await.is_err() {
         return AuthAPIError::UnexpectedError.into_response();
     }
 
