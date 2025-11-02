@@ -7,6 +7,7 @@ pub enum UserStoreError {
     UserAlreadyExists,
     UserNotFound,
     InvalidCredentials,
+    InvalidPassword,
     UnexpectedError,
 }
 #[async_trait::async_trait]

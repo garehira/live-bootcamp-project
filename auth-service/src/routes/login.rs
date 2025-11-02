@@ -3,7 +3,8 @@ use crate::domain::email::Email;
 use crate::domain::error::AuthAPIError;
 use crate::domain::password::Password;
 use axum::extract::State;
-use axum::response::{Html, IntoResponse};
+use axum::http::StatusCode;
+use axum::response::IntoResponse;
 use axum::Json;
 use serde::Deserialize;
 use std::sync::Arc;
@@ -15,10 +16,14 @@ pub struct LoginRequest {
 }
 
 pub async fn login(
-    State(_state): State<Arc<AppState>>,
+    State(state): State<Arc<AppState>>,
     Json(request): Json<LoginRequest>,
 ) -> Result<impl IntoResponse, AuthAPIError> {
-    let _email = Email::parse(request.email)?;
-    let _password = Password::parse(request.password)?;
-    Ok(Html("Login").into_response())
+    let email = Email::parse(request.email)?;
+    let password = Password::parse(request.password)?;
+
+    let user_store = &state.user_store.read().await;
+    user_store.validate_user(&email, &password).await?;
+
+    Ok(StatusCode::OK.into_response())
 }

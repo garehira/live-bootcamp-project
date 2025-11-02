@@ -32,7 +32,7 @@ impl UserStore for HashmapUserStore {
         if user.password == *password {
             Ok(())
         } else {
-            Err(UserStoreError::InvalidCredentials)
+            Err(UserStoreError::InvalidPassword)
         }
     }
 }

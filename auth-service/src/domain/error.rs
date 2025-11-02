@@ -1,3 +1,4 @@
+use crate::domain::data_stores::UserStoreError;
 use crate::domain::email::ParseError;
 use crate::domain::password::PasswordError;
 use crate::ErrorResponse;
@@ -8,6 +9,7 @@ use axum::Json;
 pub enum AuthAPIError {
     UserAlreadyExists,
     InvalidCredentials,
+    IncorrectCredentials,
     InvalidEmail,
     UnexpectedError,
     MalformedRequest,
@@ -25,6 +27,7 @@ impl IntoResponse for AuthAPIError {
                 (StatusCode::INTERNAL_SERVER_ERROR, "Unexpected error")
             }
             AuthAPIError::InvalidEmail => (StatusCode::BAD_REQUEST, "Invalid email"),
+            AuthAPIError::IncorrectCredentials => (StatusCode::UNAUTHORIZED, "Wrong password"),
         };
         let body = Json(ErrorResponse {
             error: error_message.to_string(),
@@ -35,7 +38,7 @@ impl IntoResponse for AuthAPIError {
 impl From<ParseError> for AuthAPIError {
     fn from(error: ParseError) -> Self {
         match error {
-            ParseError::InvalidEmail => AuthAPIError::MalformedRequest,
+            ParseError::InvalidEmail => AuthAPIError::InvalidEmail,
         }
     }
 }
@@ -43,5 +46,16 @@ impl From<ParseError> for AuthAPIError {
 impl From<PasswordError> for AuthAPIError {
     fn from(_error: PasswordError) -> Self {
         AuthAPIError::InvalidCredentials
+    }
+}
+impl From<UserStoreError> for AuthAPIError {
+    fn from(error: UserStoreError) -> Self {
+        match error {
+            UserStoreError::UserAlreadyExists => AuthAPIError::UnexpectedError,
+            UserStoreError::UserNotFound => AuthAPIError::UnexpectedError,
+            UserStoreError::InvalidCredentials => AuthAPIError::InvalidCredentials,
+            UserStoreError::UnexpectedError => AuthAPIError::UnexpectedError,
+            UserStoreError::InvalidPassword => AuthAPIError::IncorrectCredentials,
+        }
     }
 }
