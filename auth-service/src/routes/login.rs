@@ -6,6 +6,7 @@ use axum::extract::State;
 use axum::http::StatusCode;
 use axum::response::IntoResponse;
 use axum::Json;
+use axum_extra::extract::CookieJar;
 use serde::Deserialize;
 use std::sync::Arc;
 
@@ -17,6 +18,7 @@ pub struct LoginRequest {
 
 pub async fn login(
     State(state): State<Arc<AppState>>,
+    jar: CookieJar,
     Json(request): Json<LoginRequest>,
 ) -> Result<impl IntoResponse, AuthAPIError> {
     let email = Email::parse(request.email)?;
@@ -25,5 +27,10 @@ pub async fn login(
     let user_store = &state.user_store.read().await;
     user_store.validate_user(&email, &password).await?;
 
-    Ok(StatusCode::OK.into_response())
+    let auth_cookie = crate::util::auth::generate_auth_cookie(&email)
+        .map_err(|_| AuthAPIError::UnexpectedError)?;
+
+    let updated_jar = jar.add(auth_cookie);
+
+    Ok((updated_jar, StatusCode::OK).into_response())
 }

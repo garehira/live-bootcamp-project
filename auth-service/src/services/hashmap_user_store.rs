@@ -124,7 +124,7 @@ pub mod tests {
                 &Password::unwrap("password4§")
             )
             .await,
-            Err(UserStoreError::InvalidCredentials)
+            Err(UserStoreError::InvalidPassword)
         ));
     }
 }
