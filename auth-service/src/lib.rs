@@ -1,13 +1,15 @@
 use crate::app_state::AppState;
 use crate::routes::{login, logout, signup, verify_2fa, verify_token};
+use http::Method;
 
 use axum::routing::post;
 use axum::serve::Serve;
 use axum::Router;
+use http;
 use serde::{Deserialize, Serialize};
 use std::error::Error;
 use std::sync::Arc;
-use tower_http::services::ServeDir;
+use tower_http::{cors::CorsLayer, services::ServeDir};
 
 pub mod app_state;
 pub mod domain;
@@ -25,6 +27,21 @@ pub struct Application {
 
 impl Application {
     pub async fn build(app_state: AppState, address: &str) -> Result<Self, Box<dyn Error>> {
+        let allowed_origins = [
+            "http://localhost:8000".parse()?,
+            // TODO: Replace [YOUR_DROPLET_IP] with your Droplet IP address
+            // "http://[YOUR_DROPLET_IP]:8000".parse()?,
+        ];
+
+        let cors = CorsLayer::new()
+            // Allow GET and POST requests
+            //     .allow_methods([axum::http::Method::GET, axum::http::Method::POST])
+            .allow_methods([Method::GET, Method::POST])
+            //     .allow_methods::<AllowMethods>(reqwest::Method::GET.into())
+            // Allow cookies to be included in requests
+            .allow_credentials(true)
+            .allow_origin(allowed_origins);
+
         let router = Router::new()
             .nest_service("/", ServeDir::new("assets"))
             // .route("/", get(login))

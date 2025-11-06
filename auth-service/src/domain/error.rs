@@ -13,6 +13,8 @@ pub enum AuthAPIError {
     InvalidEmail,
     UnexpectedError,
     MalformedRequest,
+    MissingToken,
+    InvalidToken,
 }
 impl IntoResponse for AuthAPIError {
     fn into_response(self) -> Response {
@@ -28,6 +30,8 @@ impl IntoResponse for AuthAPIError {
             }
             AuthAPIError::InvalidEmail => (StatusCode::BAD_REQUEST, "Invalid email"),
             AuthAPIError::IncorrectCredentials => (StatusCode::UNAUTHORIZED, "Wrong password"),
+            AuthAPIError::MissingToken => (StatusCode::BAD_REQUEST, "Missing JWT Token"),
+            AuthAPIError::InvalidToken => (StatusCode::UNAUTHORIZED, "Invalid JWT Token"),
         };
         let body = Json(ErrorResponse {
             error: error_message.to_string(),
