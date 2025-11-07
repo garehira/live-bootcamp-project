@@ -17,3 +17,8 @@ pub trait UserStore: Send + Sync {
     async fn validate_user(&self, email: &Email, password: &Password)
         -> Result<(), UserStoreError>;
 }
+#[async_trait::async_trait]
+pub trait BannedTokenStore: Send + Sync {
+    async fn ban(&mut self, token: String) -> ();
+    async fn is_banned(&self, token: &String) -> bool;
+}

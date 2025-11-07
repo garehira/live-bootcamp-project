@@ -127,6 +127,9 @@ async fn should_return_200_if_valid_credentials_and_2fa_disabled() {
     });
 
     let response = app.post_login(&login_body).await;
+    response.cookies().for_each(|cookie| {
+        println!("{:?}", cookie);
+    });
 
     assert_eq!(response.status().as_u16(), 200);
 

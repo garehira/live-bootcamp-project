@@ -1,22 +1,28 @@
 use auth_service::app_state::AppState;
+use auth_service::app_state::BanStoreType;
 use auth_service::services::hashmap_user_store::HashmapUserStore;
+use auth_service::services::hashset_bannedtoken_store::HashsetBannedTokenStore;
 use auth_service::util::constants::test;
 use auth_service::Application;
 use reqwest::cookie::Jar;
 use std::sync::Arc;
+use tokio::sync::RwLock;
 use uuid::Uuid;
 
 pub struct TestApp {
     pub address: String,
-    pub cookie_jar: Arc<Jar>, // New!
+    pub cookie_jar: Arc<Jar>,
     pub http_client: reqwest::Client,
+    pub banned_token: BanStoreType,
+    // pub user_store:HashmapUserStore,
 }
 
 impl TestApp {
     pub async fn new() -> Self {
         let user_store = Box::new(HashmapUserStore::default());
-
-        let app_state = AppState::new(user_store);
+        let banned_token: BanStoreType =
+            Arc::new(RwLock::new(Box::new(HashsetBannedTokenStore::default())));
+        let app_state = AppState::new(user_store, Arc::clone(&banned_token));
 
         let app = Application::build(app_state, test::APP_ADDRESS)
             .await
@@ -41,6 +47,7 @@ impl TestApp {
             address,
             cookie_jar,
             http_client,
+            banned_token,
         }
     }
     pub async fn post_login<Body>(&self, body: &Body) -> reqwest::Response
@@ -53,6 +60,13 @@ impl TestApp {
             .send()
             .await
             .expect("Failed to execute request.")
+    }
+
+    pub async fn post_verify_token<Body>(&self, body: &Body) -> reqwest::Response
+    where
+        Body: serde::Serialize,
+    {
+        self.post("verify-token", &body).await
     }
 
     pub async fn post<Body>(&self, uri: &str, body: &Body) -> reqwest::Response
