@@ -56,7 +56,7 @@ impl From<UserStoreError> for AuthAPIError {
     fn from(error: UserStoreError) -> Self {
         match error {
             UserStoreError::UserAlreadyExists => AuthAPIError::UnexpectedError,
-            UserStoreError::UserNotFound => AuthAPIError::UnexpectedError,
+            UserStoreError::UserNotFound => AuthAPIError::IncorrectCredentials,
             UserStoreError::InvalidCredentials => AuthAPIError::InvalidCredentials,
             UserStoreError::UnexpectedError => AuthAPIError::UnexpectedError,
             UserStoreError::InvalidPassword => AuthAPIError::IncorrectCredentials,

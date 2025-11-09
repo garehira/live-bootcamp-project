@@ -9,14 +9,14 @@ use serde::Deserialize;
 use std::sync::Arc;
 
 #[derive(Deserialize)]
-pub struct LoginRequest {
+pub struct TokenRequest {
     pub token: String,
 }
 
 pub async fn verify_token(
     State(state): State<Arc<AppState>>,
     jar: CookieJar,
-    Json(request): Json<LoginRequest>,
+    Json(request): Json<TokenRequest>,
 ) -> Result<impl IntoResponse, AuthAPIError> {
     let token = request.token;
     auth::validate_token(&token)

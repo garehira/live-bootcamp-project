@@ -1,5 +1,30 @@
 use crate::helpers::{get_random_email, TestApp};
+use auth_service::routes::TwoFactorAuthResponse;
 use auth_service::util::constants::JWT_COOKIE_NAME;
+#[tokio::test]
+async fn should_return_206_if_valid_credentials_and_2fa_enabled() {
+    let app = TestApp::new().await;
+
+    let user = serde_json::json!({
+        "email": get_random_email(),
+        "password": "password123!",
+        "requires2FA": true
+    });
+
+    let signup_response = app.post_signup(&user).await;
+    assert_eq!(signup_response.status().as_u16(), 201);
+
+    let login_response = app.post_login(&user).await;
+    assert_eq!(login_response.status().as_u16(), 206);
+    assert_eq!(
+        login_response
+            .json::<TwoFactorAuthResponse>()
+            .await
+            .expect("Could not deserialize response body to TwoFactorAuthResponse")
+            .message,
+        "2FA required".to_owned()
+    );
+}
 
 #[tokio::test]
 async fn should_return_422_if_malformed_credentials() {
