@@ -1,5 +1,6 @@
-use auth_service::app_state::AppState;
 use auth_service::app_state::BanStoreType;
+use auth_service::app_state::{AppState, TwoFACodeStoreType};
+use auth_service::services::hashmap_two_fa_code_store::HashmapTwoFACodeStore;
 use auth_service::services::hashmap_user_store::HashmapUserStore;
 use auth_service::services::hashset_bannedtoken_store::HashsetBannedTokenStore;
 use auth_service::util::constants::test;
@@ -14,6 +15,7 @@ pub struct TestApp {
     pub cookie_jar: Arc<Jar>,
     pub http_client: reqwest::Client,
     pub banned_token: BanStoreType,
+    pub two_fa_code_store: TwoFACodeStoreType,
     // pub user_store:HashmapUserStore,
 }
 
@@ -22,7 +24,13 @@ impl TestApp {
         let user_store = Box::new(HashmapUserStore::default());
         let banned_token: BanStoreType =
             Arc::new(RwLock::new(Box::new(HashsetBannedTokenStore::default())));
-        let app_state = AppState::new(user_store, Arc::clone(&banned_token));
+        let two_fa_store: TwoFACodeStoreType =
+            Arc::new(RwLock::new(Box::new(HashmapTwoFACodeStore::default())));
+        let app_state = AppState::new(
+            user_store,
+            Arc::clone(&banned_token),
+            Arc::clone(&two_fa_store),
+        );
 
         let app = Application::build(app_state, test::APP_ADDRESS)
             .await
@@ -48,6 +56,7 @@ impl TestApp {
             cookie_jar,
             http_client,
             banned_token,
+            two_fa_code_store: two_fa_store,
         }
     }
     pub async fn post_login<Body>(&self, body: &Body) -> reqwest::Response

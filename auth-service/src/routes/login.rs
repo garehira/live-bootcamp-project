@@ -1,4 +1,5 @@
 use crate::app_state::AppState;
+use crate::domain::data_stores::{LoginAttemptId, TwoFACode};
 use crate::domain::email::Email;
 use crate::domain::error::AuthAPIError;
 use crate::domain::password::Password;
@@ -35,24 +36,35 @@ pub async fn login(
     let user = user_store.get_user(&email).await?;
 
     let res = if user.requires_2fa {
-        handle2fa().await?
+        handle2fa(&user.email, &state).await?
     } else {
         handle_no_2fa().await?
     };
     Ok((updated_jar, res))
 }
 
-// New!
-// async fn handle2fa(jar: CookieJar) -> Result<impl IntoResponse, AuthAPIError> {
-async fn handle2fa() -> Result<(StatusCode, Json<LoginResponse>), AuthAPIError> {
-    //     // TODO: Return a TwoFactorAuthResponse. The message should be "2FA required".
-    //     // The login attempt ID should be "123456". We will replace this hard-coded login attempt ID soon!
+async fn handle2fa(
+    email: &Email,
+    app_state: &Arc<AppState>,
+) -> Result<(StatusCode, Json<LoginResponse>), AuthAPIError> {
+    // First, we must generate a new random login attempt ID and 2FA code
+    let login_attempt_id = LoginAttemptId::default();
+    let two_fa_code = TwoFACode::default();
+
+    app_state
+        .two_fa_code_store
+        .write()
+        .await
+        .as_mut()
+        .add_code(email.clone(), login_attempt_id.clone(), two_fa_code)
+        .await?;
+    // Finally, we need to return the login attempt ID to the client
     let response = Json(LoginResponse::TwoFactorAuth(TwoFactorAuthResponse {
-        message: "2FA required".to_owned(),
-        login_attempt_id: "123456".to_owned(),
+        message: "2FA required".to_string(),
+        login_attempt_id: login_attempt_id.as_ref().to_string(), // Add the generated login attempt ID
     }));
-    let statuscode = StatusCode::from_u16(206).unwrap();
-    Ok((statuscode, response))
+    let status_code = StatusCode::from_u16(206).unwrap();
+    Ok((status_code, response))
 }
 
 async fn handle_no_2fa() -> Result<(StatusCode, Json<LoginResponse>), AuthAPIError> {

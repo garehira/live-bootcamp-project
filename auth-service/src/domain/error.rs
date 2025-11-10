@@ -1,4 +1,4 @@
-use crate::domain::data_stores::UserStoreError;
+use crate::domain::data_stores::{TwoFACodeStoreError, UserStoreError};
 use crate::domain::email::ParseError;
 use crate::domain::password::PasswordError;
 use crate::ErrorResponse;
@@ -43,6 +43,14 @@ impl From<ParseError> for AuthAPIError {
     fn from(error: ParseError) -> Self {
         match error {
             ParseError::InvalidEmail => AuthAPIError::InvalidEmail,
+        }
+    }
+}
+impl From<TwoFACodeStoreError> for AuthAPIError {
+    fn from(error: TwoFACodeStoreError) -> Self {
+        match error {
+            TwoFACodeStoreError::UnexpectedError => AuthAPIError::UnexpectedError,
+            TwoFACodeStoreError::LoginAttemptIdNotFound => AuthAPIError::IncorrectCredentials,
         }
     }
 }
