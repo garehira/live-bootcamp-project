@@ -36,20 +36,27 @@ pub async fn login(
     let user = user_store.get_user(&email).await?;
 
     let res = if user.requires_2fa {
-        handle2fa(&user.email, &state).await?
+        handle_2fa(&user.email, &state).await?
     } else {
         handle_no_2fa().await?
     };
     Ok((updated_jar, res))
 }
 
-async fn handle2fa(
+async fn handle_2fa(
     email: &Email,
     app_state: &Arc<AppState>,
 ) -> Result<(StatusCode, Json<LoginResponse>), AuthAPIError> {
     // First, we must generate a new random login attempt ID and 2FA code
     let login_attempt_id = LoginAttemptId::default();
     let two_fa_code = TwoFACode::default();
+
+    app_state
+        .email_client
+        .write()
+        .await
+        .send_email(email, "Here is your 2FA Token", two_fa_code.as_ref())
+        .await?;
 
     app_state
         .two_fa_code_store

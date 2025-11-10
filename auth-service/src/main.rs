@@ -1,5 +1,6 @@
 use auth_service::services::hashmap_two_fa_code_store::HashmapTwoFACodeStore;
 use auth_service::services::hashset_bannedtoken_store::HashsetBannedTokenStore;
+use auth_service::services::mock_email_client::MockEmailClient;
 use auth_service::util::constants::prod;
 use auth_service::{app_state, Application};
 use std::sync::Arc;
@@ -10,10 +11,12 @@ async fn main() {
     let user_store = Box::new(app_state::HashmapUserStore::default());
     let ban_store = Box::new(HashsetBannedTokenStore::default());
     let two_fa_store = Box::new(HashmapTwoFACodeStore::default());
+    let email_client = Box::new(MockEmailClient::new());
     let app_state = app_state::AppState::new(
         user_store,
         Arc::new(RwLock::new(ban_store)),
         Arc::new(RwLock::new(two_fa_store)),
+        Arc::new(RwLock::new(email_client)),
     );
 
     let app = Application::build(app_state, prod::APP_ADDRESS)

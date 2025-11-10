@@ -46,6 +46,11 @@ impl From<ParseError> for AuthAPIError {
         }
     }
 }
+impl From<String> for AuthAPIError {
+    fn from(error: String) -> Self {
+        AuthAPIError::UnexpectedError
+    }
+}
 impl From<TwoFACodeStoreError> for AuthAPIError {
     fn from(error: TwoFACodeStoreError) -> Self {
         match error {
