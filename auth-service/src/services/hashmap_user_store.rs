@@ -43,52 +43,23 @@ pub mod tests {
 
     pub async fn test_data() -> HashmapUserStore {
         let mut store = HashmapUserStore::default();
-        let user = User::new(
-            "herbert@email.com".to_string(),
-            "password123§!!".to_string(),
-            true,
-        )
-        .unwrap();
+        let user = User::new("herbert@email.com", "password123§!!", true).unwrap();
         store.add_user(user).await.unwrap();
-        let user = User::new(
-            "hubert@email.com".to_string(),
-            "password123§!!".to_string(),
-            true,
-        )
-        .unwrap();
+        let user = User::new("hubert@email.com", "password123§!!", true).unwrap();
         store.add_user(user).await.unwrap();
-        let user = User::new(
-            "hermann@email.com".to_string(),
-            "password123§!!".to_string(),
-            true,
-        )
-        .unwrap();
+        let user = User::new("hermann@email.com", "password123§!!", true).unwrap();
         store.add_user(user).await.unwrap();
         store
     }
     #[tokio::test]
     async fn test_add_user() {
         let mut hm = test_data().await;
-        hm.add_user(
-            User::new(
-                "herbert222@email.com".to_string(),
-                "password123+".to_string(),
-                true,
-            )
-            .unwrap(),
-        )
-        .await
-        .expect("Failed to add user");
+        hm.add_user(User::new("herbert222@email.com", "password123+", true).unwrap())
+            .await
+            .expect("Failed to add user");
 
         let res = hm
-            .add_user(
-                User::new(
-                    "herbert@email.com".to_string(),
-                    "password321$".to_string(),
-                    true,
-                )
-                .unwrap(),
-            )
+            .add_user(User::new("herbert@email.com", "password321$", true).unwrap())
             .await;
         assert!(matches!(res, Err(UserStoreError::UserAlreadyExists)));
     }

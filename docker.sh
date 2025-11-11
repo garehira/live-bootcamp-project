@@ -18,9 +18,12 @@ while IFS= read -r line; do
     value=$(echo "$line" | cut -d '=' -f2-)
     # Export the variable
     export "$key=$value"
+    echo "$key=$value"
   fi
 done < <(grep -v '^#' "$ENV_FILE")
 
+export  JWT_SECRET=8w8Pu987O+mvZq5573gvwMNfMSzF6QX6ZIxhjuYtT91iD0UGN9U+GOi2LU4hUA0PGkoizJgOlgU1JyWKQRPweg==
+echo $JWT_SECRET
 # Run docker-compose commands with exported variables
 docker compose build
 docker compose up

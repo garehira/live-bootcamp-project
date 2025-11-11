@@ -1,3 +1,5 @@
+use auth_service::domain::data_stores::UserStore;
+use auth_service::domain::user::User;
 use auth_service::services::hashmap_two_fa_code_store::HashmapTwoFACodeStore;
 use auth_service::services::hashset_bannedtoken_store::HashsetBannedTokenStore;
 use auth_service::services::mock_email_client::MockEmailClient;
@@ -8,7 +10,11 @@ use tokio::sync::RwLock;
 
 #[tokio::main]
 async fn main() {
-    let user_store = Box::new(app_state::HashmapUserStore::default());
+    let mut user_store = Box::new(app_state::HashmapUserStore::default());
+    user_store
+        .add_user(User::new("frank@sinst.com", "password123!", true).unwrap())
+        .await
+        .expect("TODO: panic message");
     let ban_store = Box::new(HashsetBannedTokenStore::default());
     let two_fa_store = Box::new(HashmapTwoFACodeStore::default());
     let email_client = Box::new(MockEmailClient::default());

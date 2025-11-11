@@ -28,10 +28,10 @@ impl From<PasswordError> for UserError {
 }
 
 impl User {
-    pub fn new(email: String, password: String, requires_2fa: bool) -> Result<Self, UserError> {
+    pub fn new(email: &str, password: &str, requires_2fa: bool) -> Result<Self, UserError> {
         Ok(User {
-            email: Email::parse(email)?,
-            password: Password::parse(password)?,
+            email: Email::parse(email.to_string())?,
+            password: Password::parse(password.to_string())?,
             requires_2fa,
         })
     }
