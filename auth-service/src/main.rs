@@ -11,7 +11,7 @@ async fn main() {
     let user_store = Box::new(app_state::HashmapUserStore::default());
     let ban_store = Box::new(HashsetBannedTokenStore::default());
     let two_fa_store = Box::new(HashmapTwoFACodeStore::default());
-    let email_client = Box::new(MockEmailClient::new());
+    let email_client = Box::new(MockEmailClient::default());
     let app_state = app_state::AppState::new(
         user_store,
         Arc::new(RwLock::new(ban_store)),

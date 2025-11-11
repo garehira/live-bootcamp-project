@@ -7,6 +7,7 @@ use axum::extract::State;
 use axum::http::StatusCode;
 use axum::response::IntoResponse;
 use axum::Json;
+use axum_extra::extract::CookieJar;
 use serde::{Deserialize, Serialize};
 use std::sync::Arc;
 
@@ -20,6 +21,7 @@ pub struct SignupRequest {
 
 pub async fn signup(
     State(state): State<Arc<AppState>>,
+    _jar: CookieJar,
     Json(request): Json<SignupRequest>,
 ) -> impl IntoResponse {
     // Create a new `User` instance using data in the `request`

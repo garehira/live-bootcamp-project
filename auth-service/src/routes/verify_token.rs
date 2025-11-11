@@ -14,8 +14,8 @@ pub struct TokenRequest {
 }
 
 pub async fn verify_token(
-    State(state): State<Arc<AppState>>,
-    jar: CookieJar,
+    State(_state): State<Arc<AppState>>,
+    _jar: CookieJar,
     Json(request): Json<TokenRequest>,
 ) -> Result<impl IntoResponse, AuthAPIError> {
     let token = request.token;

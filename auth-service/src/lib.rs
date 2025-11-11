@@ -33,7 +33,7 @@ impl Application {
             // "http://[YOUR_DROPLET_IP]:8000".parse()?,
         ];
 
-        let cors = CorsLayer::new()
+        let _cors = CorsLayer::new()
             // Allow GET and POST requests
             //     .allow_methods([axum::http::Method::GET, axum::http::Method::POST])
             .allow_methods([Method::GET, Method::POST])

@@ -1,5 +1,6 @@
 use crate::domain::{Email, EmailClient};
 
+#[derive(Default)]
 pub struct MockEmailClient;
 
 impl MockEmailClient {

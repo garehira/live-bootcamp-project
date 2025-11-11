@@ -47,7 +47,7 @@ impl From<ParseError> for AuthAPIError {
     }
 }
 impl From<String> for AuthAPIError {
-    fn from(error: String) -> Self {
+    fn from(_error: String) -> Self {
         AuthAPIError::UnexpectedError
     }
 }
