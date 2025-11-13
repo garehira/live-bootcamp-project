@@ -1,5 +1,4 @@
 use crate::helpers::{get_random_email, TestApp};
-use auth_service::domain::data_stores::BannedTokenStore;
 use auth_service::util::constants::JWT_COOKIE_NAME;
 use reqwest::Url;
 
@@ -60,8 +59,9 @@ async fn should_return_200_if_valid_jwt_cookie() {
         .expect("JWT cookie should exist after login");
 
     // now logout
-    let no_body = serde_json::json!({});
-    let response = app.post("logout", &no_body).await;
+    // let no_body = serde_json::json!({});
+    // let response = app.post("logout", &no_body).await;
+    let response = app.post_logout().await;
     assert_eq!(response.status().as_u16(), 200);
     // cookie shall be deleted
     assert!(response

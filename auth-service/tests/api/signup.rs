@@ -50,6 +50,11 @@ async fn should_return_201_if_valid_input() {
             "password": "passwordisvalid!!123",
             "requires2FA": false
         }),
+        serde_json::json!({
+            "email": get_random_email(),
+            "password": "password123!",
+            "requires2FA": true
+        }),
     ];
 
     for test_case in test_cases.iter() {

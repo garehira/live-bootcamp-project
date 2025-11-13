@@ -58,13 +58,14 @@ async fn handle_2fa(
         .send_email(email, "Here is your 2FA Token", two_fa_code.as_ref())
         .await?;
 
-    app_state
-        .two_fa_code_store
-        .write()
-        .await
+    let mut write_lock = app_state.two_fa_code_store.write().await;
+
+    write_lock
         .as_mut()
         .add_code(email.clone(), login_attempt_id.clone(), two_fa_code)
         .await?;
+
+    std::mem::drop(write_lock);
     // Finally, we need to return the login attempt ID to the client
     let response = Json(LoginResponse::TwoFactorAuth(TwoFactorAuthResponse {
         message: "2FA required".to_string(),

@@ -23,6 +23,7 @@ dotenvy = "0.15.7"
 lazy_static = "1.4.0"
 http = "1.3.1"
 rand = "0.8.5"
+log = "0.4.28"
 
 [dev-dependencies]
 reqwest = { version = "0.12.24", default-features = false, features = ["json", "cookies"] }

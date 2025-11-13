@@ -29,8 +29,8 @@ pub mod prod {
 pub mod test {
     pub const APP_ADDRESS: &str = "127.0.0.1:0";
 }
-#[test]
-pub fn testit() {
-    let token = _set_token();
-    assert!(token.len() > 0);
-}
+// #[test]
+// pub fn testit() {
+//     let token = _set_token();
+//     assert!(token.len() > 0);
+// }

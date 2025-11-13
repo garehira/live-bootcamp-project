@@ -41,16 +41,22 @@ pub trait TwoFACodeStore: Send + Sync {
 #[derive(Debug, PartialEq, Clone, Hash, Eq)]
 pub struct LoginAttemptId(String);
 impl LoginAttemptId {
-    pub fn parse(id: String) -> Result<Self, String> {
+    pub fn parse(id: String) -> Result<Self, uuid::Error> {
         // Use the `parse_str` function from the `uuid` crate to ensure `id` is a valid UUID
-        match Uuid::parse_str(id.as_str()) {
-            Ok(uuid) => Ok(Self(uuid.to_string())),
-            Err(_) => Err("Invalid UUID".to_string()),
-        }
+        Ok(Self(Uuid::parse_str(id.as_str())?.to_string()))
     }
     pub fn as_ref(&self) -> &str {
         &self.0
     }
+}
+
+#[test]
+pub fn test_parse() {
+    let inpo = uuid::Uuid::new_v4().to_string();
+    println!("inpo {}", inpo);
+    let l = LoginAttemptId::parse(inpo.to_owned()).unwrap();
+    // let l = LoginAttemptId::parse("123456".to_string()).unwrap();
+    println!("l {}", l.as_ref());
 }
 impl Default for LoginAttemptId {
     fn default() -> Self {

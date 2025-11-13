@@ -75,6 +75,17 @@ impl TestApp {
             .expect("Failed to execute request.")
     }
 
+    pub async fn post_logout(&self) -> reqwest::Response {
+        self.post("logout", &"".to_string()).await
+    }
+
+    pub async fn post_verify_2fa<Body>(&self, body: &Body) -> reqwest::Response
+    where
+        Body: serde::Serialize,
+    {
+        self.post("verify-2fa", &body).await
+    }
+
     pub async fn post_verify_token<Body>(&self, body: &Body) -> reqwest::Response
     where
         Body: serde::Serialize,
@@ -109,14 +120,6 @@ impl TestApp {
     pub async fn get_root(&self) -> reqwest::Response {
         self.http_client
             .get(&format!("{}/", &self.address))
-            .send()
-            .await
-            .expect("Failed to execute request.")
-    }
-
-    pub async fn post_uri(&self, uri: &str) -> reqwest::Response {
-        self.http_client
-            .post(&format!("{}/{}", &self.address, uri))
             .send()
             .await
             .expect("Failed to execute request.")

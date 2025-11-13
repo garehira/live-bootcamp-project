@@ -27,6 +27,9 @@ pub async fn logout(
     let c = cookie.clone();
     let token = c.value();
     println!("token: {}", token);
+
+    // should but dont have email
+    // state.two_fa_code_store.write().await.remove_code()
     // ban that sucker
 
     let mut ban_store = state.ban_store.write().await;

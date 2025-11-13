@@ -5,6 +5,7 @@ use crate::ErrorResponse;
 use axum::http::StatusCode;
 use axum::response::{IntoResponse, Response};
 use axum::Json;
+use uuid::Error;
 
 pub enum AuthAPIError {
     UserAlreadyExists,
@@ -15,12 +16,14 @@ pub enum AuthAPIError {
     MalformedRequest,
     MissingToken,
     InvalidToken,
+    InvalidLoginId,
 }
 impl IntoResponse for AuthAPIError {
     fn into_response(self) -> Response {
         let (status, error_message) = match self {
             AuthAPIError::UserAlreadyExists => (StatusCode::CONFLICT, "User already exists"),
             AuthAPIError::InvalidCredentials => (StatusCode::BAD_REQUEST, "Invalid credentials"),
+            AuthAPIError::InvalidLoginId => (StatusCode::BAD_REQUEST, "Invalid credentials"),
             AuthAPIError::MalformedRequest => {
                 (StatusCode::UNPROCESSABLE_ENTITY, "Malformed Request")
             }
@@ -37,6 +40,12 @@ impl IntoResponse for AuthAPIError {
             error: error_message.to_string(),
         });
         (status, body).into_response()
+    }
+}
+
+impl From<Error> for AuthAPIError {
+    fn from(_error: Error) -> Self {
+        AuthAPIError::InvalidLoginId
     }
 }
 impl From<ParseError> for AuthAPIError {
