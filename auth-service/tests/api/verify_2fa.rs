@@ -79,14 +79,22 @@ async fn should_return_401_if_old_code() {
     assert_eq!(login_response1.status().as_u16(), 206);
     // save the code for later...
     let user_email = Email::parse(email.clone()).unwrap();
-    let fa2 = app.two_fa_code_store.read().await;
-    let saved_code = fa2.get_code(&user_email).await.unwrap();
+
+    let saved_code = app
+        .two_fa_code_store
+        .read()
+        .await
+        .get_code(&user_email)
+        .await
+        .unwrap()
+        .to_owned();
 
     let r = Verify2FARequest {
         email,
         login_attempt_id: saved_code.0.as_ref().to_string(),
         two_fa_code: saved_code.1.as_ref().to_string(),
     };
+
     let tweaked_2fa = serde_json::to_value(&r).unwrap();
 
     let verify_response1 = app.post_verify_2fa(&tweaked_2fa).await;
@@ -99,7 +107,7 @@ async fn should_return_401_if_old_code() {
     let login_response2 = app.post_login(&user).await;
     assert_eq!(login_response2.status().as_u16(), 206);
 
-    // now checking on the old 2fa token, it should be mood.
+    // now checking on the old 2fa token, it should be stale.
     let verify_response2 = app.post_verify_2fa(&tweaked_2fa).await;
     assert_eq!(verify_response2.status().as_u16(), 401);
 }
