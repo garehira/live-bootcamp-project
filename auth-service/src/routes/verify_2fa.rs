@@ -29,15 +29,26 @@ pub async fn verify_2fa(
         TwoFACode::parse(request.two_fa_code).map_err(|_| AuthAPIError::InvalidToken)?;
 
     // lookup
-    let t = state.two_fa_code_store.read().await;
-    let found_state = t
-        .as_ref()
-        .get_code(&email)
+    {
+        // restrict life span of lock
+        let lock_code_store = state.two_fa_code_store.read().await;
+        let found_state = lock_code_store
+            .get_code(&email)
+            .await
+            .map_err(|_| AuthAPIError::IncorrectCredentials)?;
+        // .to_owned(); // this is the easy way to end the life of lock and get the data out.
+
+        if *found_state != (login_attempt_id, two_fa_code) {
+            return Err(AuthAPIError::IncorrectCredentials);
+        }
+    } // end of life for lock
+      // remove state
+    state
+        .two_fa_code_store
+        .write()
         .await
-        .map_err(|_| AuthAPIError::IncorrectCredentials)?;
-    if *found_state != (login_attempt_id, two_fa_code) {
-        return Err(AuthAPIError::IncorrectCredentials);
-    }
+        .remove_code(&email)
+        .await?;
 
     Ok(())
 }
