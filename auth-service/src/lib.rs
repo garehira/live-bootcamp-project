@@ -7,6 +7,8 @@ use axum::serve::Serve;
 use axum::Router;
 use http;
 use serde::{Deserialize, Serialize};
+use sqlx::postgres::PgPoolOptions;
+use sqlx::PgPool;
 use std::error::Error;
 use std::sync::Arc;
 use tower_http::{cors::CorsLayer, services::ServeDir};
@@ -69,4 +71,8 @@ impl Application {
 #[derive(Serialize, Deserialize)]
 pub struct ErrorResponse {
     pub error: String,
+}
+pub async fn get_postgres_pool(url: &str) -> Result<PgPool, sqlx::Error> {
+    // Create a new PostgreSQL connection pool
+    PgPoolOptions::new().max_connections(5).connect(url).await
 }

@@ -27,3 +27,5 @@ echo $JWT_SECRET
 # Run docker-compose commands with exported variables
 docker compose build
 docker compose up
+#// docker run --name ps-db -e POSTGRES_PASSWORD=POST123 -p 5434:5432 -d postgres:15.2-alpine
+# systemctl stop postgres
