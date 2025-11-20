@@ -5,8 +5,7 @@ use std::env as std_env;
 // Define a lazily evaluated static. lazy_static is needed because std_env::var is not a const function.
 lazy_static! {
     pub static ref JWT_SECRET: String = "8w8Pu987O+mvZq5573gvwMNfMSzF6QX6ZIxhjuYtT91iD0UGN9U+GOi2LU4hUA0PGkoizJgOlgU1JyWKQRPweg==".to_string();
-    pub static ref DATABASE_URL:String = "Postgres://postgres:POST123@postgres:5432".to_string();
-     // pub static ref DATABASE_URL:String = "Postgres://postgres:POST123@127.0.0.1:5434".to_string();
+    pub static ref DATABASE_URL:String = "postgres://postgres:POST123@localhost:5434".to_string();
     // #set_token();
 }
 
