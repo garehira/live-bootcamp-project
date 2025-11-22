@@ -4,12 +4,19 @@ use std::env as std_env;
 
 // Define a lazily evaluated static. lazy_static is needed because std_env::var is not a const function.
 lazy_static! {
-    pub static ref JWT_SECRET: String = "8w8Pu987O+mvZq5573gvwMNfMSzF6QX6ZIxhjuYtT91iD0UGN9U+GOi2LU4hUA0PGkoizJgOlgU1JyWKQRPweg==".to_string();
-    pub static ref DATABASE_URL:String = "postgres://postgres:POST123@localhost:5434".to_string();
-    // #set_token();
+    pub static ref JWT_SECRET: String = set_token();
+    // pub static ref DATABASE_URL:String = "postgres://postgres:POST123@db:5432".to_string();
+}
+lazy_static! {
+    pub static ref DATABASE_URL: String = set_db_url();
 }
 
-fn _set_token() -> String {
+fn set_db_url() -> String {
+    dotenv().ok();
+    std_env::var(env::DATABASE_URL_ENV_VAR).expect("DATABASE_URL must be set.")
+}
+
+fn set_token() -> String {
     dotenv().ok(); // Load environment variables
     let secret = std_env::var(env::JWT_SECRET_ENV_VAR).expect("JWT_SECRET must be set.");
     if secret.is_empty() {
@@ -20,6 +27,7 @@ fn _set_token() -> String {
 
 pub mod env {
     pub const JWT_SECRET_ENV_VAR: &str = "JWT_SECRET";
+    pub const DATABASE_URL_ENV_VAR: &str = "DATABASE_URL";
 }
 
 pub const JWT_COOKIE_NAME: &str = "jwt";
@@ -30,8 +38,8 @@ pub mod prod {
 pub mod test {
     pub const APP_ADDRESS: &str = "127.0.0.1:0";
 }
-// #[test]
-// pub fn testit() {
-//     let token = _set_token();
-//     assert!(token.len() > 0);
-// }
+#[test]
+pub fn test_token() {
+    let token = set_token();
+    assert!(token.len() > 0);
+}

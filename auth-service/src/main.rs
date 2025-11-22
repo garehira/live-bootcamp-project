@@ -30,7 +30,7 @@ async fn main() {
 
     let app = Application::build(app_state, prod::APP_ADDRESS)
         .await
-        .expect("Failed to build app");
+        .expect("Failed to start app");
 
     app.run().await.expect("Failed to run app");
 }
@@ -39,7 +39,7 @@ async fn configure_postgresql() -> PgPool {
     println!("Configuring database at {}", &DATABASE_URL.to_string());
     let pg_pool = get_postgres_pool(&DATABASE_URL)
         .await
-        .expect("Failed to create Postgres connection pool!");
+        .expect("Failed to create Postgres connection pool! ");
     println!("database running.");
 
     // Run database migrations against our test database!
