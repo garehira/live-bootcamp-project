@@ -1,4 +1,6 @@
-#[derive(Debug, PartialEq, Clone, Hash, Eq)]
+#[derive(sqlx::Type)]
+#[sqlx(transparent)]
+#[derive(sqlx::FromRow, Debug, PartialEq, Clone, Hash, Eq)]
 pub struct Email(String);
 #[derive(Debug, PartialEq, Clone)]
 pub enum ParseError {

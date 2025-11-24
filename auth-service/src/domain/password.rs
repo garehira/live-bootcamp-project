@@ -9,8 +9,9 @@ pub enum PasswordError {
     #[error("Password must contain at least one special character")]
     NoSpecialCharacter,
 }
-
-#[derive(Debug, Clone, PartialEq)]
+#[derive(sqlx::Type)]
+#[sqlx(transparent)]
+#[derive(sqlx::FromRow, Debug, Clone, PartialEq)]
 pub struct Password(String);
 
 impl Password {
