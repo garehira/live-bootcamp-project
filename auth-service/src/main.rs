@@ -1,5 +1,4 @@
-use auth_service::domain::data_stores::UserStore;
-use auth_service::domain::user::User;
+use auth_service::services::data_stares::postgres_user_store::PostgresUserStore;
 use auth_service::services::hashmap_two_fa_code_store::HashmapTwoFACodeStore;
 use auth_service::services::hashset_bannedtoken_store::HashsetBannedTokenStore;
 use auth_service::services::mock_email_client::MockEmailClient;
@@ -13,16 +12,12 @@ use tokio::sync::RwLock;
 async fn main() {
     let pg_pool = configure_postgresql().await;
 
-    let mut user_store = Box::new(app_state::HashmapUserStore::default());
-    user_store
-        .add_user(User::new("frank@sinst.com", "password123!", true).unwrap())
-        .await
-        .expect("TODO: panic message");
+    let user_store = Box::new(PostgresUserStore::new(pg_pool));
     let ban_store = Box::new(HashsetBannedTokenStore::default());
     let two_fa_store = Box::new(HashmapTwoFACodeStore::default());
     let email_client = Box::new(MockEmailClient::default());
     let app_state = app_state::AppState::new(
-        user_store,
+        Arc::new(RwLock::new(user_store)),
         Arc::new(RwLock::new(ban_store)),
         Arc::new(RwLock::new(two_fa_store)),
         Arc::new(RwLock::new(email_client)),

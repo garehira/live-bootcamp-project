@@ -23,3 +23,10 @@ Stop standalone database
 
 docker stop ps-db
 ```
+
+Docker down
+
+```shell
+
+docker compose down
+```
