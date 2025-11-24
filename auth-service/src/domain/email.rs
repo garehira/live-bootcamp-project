@@ -1,3 +1,5 @@
+use std::ops::Deref;
+
 #[derive(sqlx::Type)]
 #[sqlx(transparent)]
 #[derive(sqlx::FromRow, Debug, PartialEq, Clone, Hash, Eq)]
@@ -19,8 +21,17 @@ impl Email {
         Self::parse(email.to_string()).unwrap()
     }
 }
+
 impl AsRef<str> for Email {
     fn as_ref(&self) -> &str {
+        &self.0
+    }
+}
+
+impl Deref for Email {
+    type Target = String;
+
+    fn deref(&self) -> &Self::Target {
         &self.0
     }
 }

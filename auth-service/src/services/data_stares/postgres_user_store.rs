@@ -2,11 +2,11 @@ use argon2::{
     password_hash::SaltString, Algorithm, Argon2, Params, PasswordHash, PasswordHasher,
     PasswordVerifier, Version,
 };
-use sqlx::{query, Error, PgPool};
+use sqlx::{query, PgPool};
 
 use crate::domain::data_stores::{UserStore, UserStoreError};
 use crate::domain::password::Password;
-use crate::domain::user::User;
+use crate::domain::user::{User, UserRow};
 use crate::domain::Email;
 
 pub struct PostgresUserStore {
@@ -22,9 +22,9 @@ impl PostgresUserStore {
 #[async_trait::async_trait]
 impl UserStore for PostgresUserStore {
     async fn add_user(&mut self, user: User) -> Result<(), UserStoreError> {
-        let hash = compute_password_hash(user.password.as_ref())
+        let hash = compute_password_hash(user.password_hash.as_ref())
             .await
-            .map_err(|e| UserStoreError::InvalidCredentials)?;
+            .map_err(|_| UserStoreError::InvalidCredentials)?;
         query!(
             "INSERT INTO users (email, password_hash, requires_2fa) VALUES ($1, $2, $3)",
             user.email.as_ref(),
@@ -33,18 +33,24 @@ impl UserStore for PostgresUserStore {
         )
         .execute(&self.pool)
         .await
-        .map_err(|e| UserStoreError::UserAlreadyExists)?;
+        .map_err(|_| UserStoreError::UserAlreadyExists)?;
         Ok(())
     }
 
     async fn get_user(&self, email: &Email) -> Result<User, UserStoreError> {
-        let row: Result<crate::domain::user::User, Error> =
-            sqlx::query_as("SELECT * FROM USERS WHERE email = $1")
-                .bind(email.as_ref())
-                .fetch_one(&self.pool)
-                .await;
+        let row = sqlx::query_as!(UserRow, "SELECT * FROM USERS WHERE email = $1", email)
+            .fetch_one(&self.pool)
+            .await
+            .map_err(|_| UserStoreError::UserNotFound)?;
+        //
+        // let row: Result<crate::domain::user::User, Error> =
+        //     sqlx::query_as("SELECT * FROM USERS WHERE email = $1")
+        //         .bind(email.as_ref())
+        //         .fetch_one(&self.pool)
+        //         .await;
 
-        row.map_err(|e| UserStoreError::UserNotFound)
+        // row.map_err(|_| UserStoreError::UserNotFound)
+        User::try_from(row).map_err(|_| UserStoreError::InvalidCredentials)
     }
 
     async fn validate_user(
@@ -53,9 +59,9 @@ impl UserStore for PostgresUserStore {
         password: &Password,
     ) -> Result<(), UserStoreError> {
         let user = self.get_user(email).await?;
-        verify_password_hash(user.password.as_ref(), password.as_ref())
+        verify_password_hash(user.password_hash.as_ref(), password.as_ref())
             .await
-            .map_err(|e| UserStoreError::InvalidPassword)
+            .map_err(|_| UserStoreError::InvalidPassword)
     }
 }
 

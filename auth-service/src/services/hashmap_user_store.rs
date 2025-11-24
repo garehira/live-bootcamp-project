@@ -33,7 +33,7 @@ impl UserStore for HashmapUserStore {
         password: &Password,
     ) -> Result<(), UserStoreError> {
         let user = self.get_user(email).await?;
-        if user.password == *password {
+        if user.password_hash == *password {
             Ok(())
         } else {
             Err(UserStoreError::InvalidPassword)

@@ -6,7 +6,12 @@ use crate::domain::password::{Password, PasswordError};
 #[derive(sqlx::FromRow, Debug, PartialEq, Clone)]
 pub struct User {
     pub email: Email,
-    pub password: Password,
+    pub password_hash: Password,
+    pub requires_2fa: bool,
+}
+pub struct UserRow {
+    pub email: String,
+    pub password_hash: String,
     pub requires_2fa: bool,
 }
 
@@ -14,6 +19,7 @@ pub struct User {
 pub enum UserError {
     EmailError(ParseError),
     PasswordError(PasswordError),
+    DBLoadError,
 }
 
 impl From<ParseError> for UserError {
@@ -27,18 +33,30 @@ impl From<PasswordError> for UserError {
     }
 }
 
+impl TryFrom<UserRow> for User {
+    type Error = UserError;
+
+    fn try_from(row: UserRow) -> Result<Self, Self::Error> {
+        Ok(User {
+            email: Email::parse(row.email)?,
+            password_hash: Password::parse(row.password_hash)?,
+            requires_2fa: row.requires_2fa,
+        })
+    }
+}
+
 impl User {
     pub fn new(email: &str, password: &str, requires_2fa: bool) -> Result<Self, UserError> {
         Ok(User {
             email: Email::parse(email.to_string())?,
-            password: Password::parse(password.to_string())?,
+            password_hash: Password::parse(password.to_string())?,
             requires_2fa,
         })
     }
     pub fn new2(email: Email, password: Password, requires_2fa: bool) -> Self {
         User {
             email,
-            password,
+            password_hash: password,
             requires_2fa,
         }
     }
