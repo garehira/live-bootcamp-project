@@ -10,6 +10,7 @@ async fn should_return_422_if_malformed_input() {
 
     let response = app.post_verify_token(&test1).await;
     assert_eq!(response.status().as_u16(), 422);
+    app.clean_up().await;
 }
 #[tokio::test]
 async fn should_return_200_valid_token() {
@@ -19,6 +20,7 @@ async fn should_return_200_valid_token() {
     });
     let response = app.post_verify_token(&test1).await;
     assert_eq!(response.status().as_u16(), 401);
+    app.clean_up().await;
 }
 
 #[tokio::test]
@@ -29,4 +31,5 @@ async fn should_return_401_if_invalid_token() {
     });
     let response = app.post_verify_token(&test1).await;
     assert_eq!(response.status().as_u16(), 401);
+    app.clean_up().await;
 }

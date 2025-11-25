@@ -15,6 +15,7 @@ async fn should_return_422_if_malformed_input() {
 
     let response = app.post_verify_2fa(&login_body).await;
     assert_eq!(response.status().as_u16(), 422);
+    app.clean_up().await;
 }
 
 #[tokio::test]
@@ -47,6 +48,7 @@ async fn should_return_400_if_invalid_input() {
 
     let response = app.post_verify_2fa(&login_body).await;
     assert_eq!(response.status().as_u16(), 400);
+    app.clean_up().await;
 }
 #[tokio::test]
 async fn should_return_401_if_incorrect_credentials() {
@@ -60,6 +62,7 @@ async fn should_return_401_if_incorrect_credentials() {
 
     let response = app.post_verify_2fa(&login_body).await;
     assert_eq!(response.status().as_u16(), 401);
+    app.clean_up().await;
 }
 
 #[tokio::test]
@@ -110,4 +113,5 @@ async fn should_return_401_if_old_code() {
     // now checking on the old 2fa token, it should be stale.
     let verify_response2 = app.post_verify_2fa(&tweaked_2fa).await;
     assert_eq!(verify_response2.status().as_u16(), 401);
+    app.clean_up().await;
 }

@@ -10,6 +10,7 @@ async fn should_return_400_if_jwt_cookie_missing() {
     let no_body = serde_json::json!({});
     let response = app.post("logout", &no_body).await;
     assert_eq!(response.status().as_u16(), 400);
+    app.clean_up().await;
 }
 
 #[tokio::test]
@@ -28,6 +29,7 @@ async fn should_return_401_if_invalid_token() {
     let no_body = serde_json::json!({});
     let response = app.post("logout", &no_body).await;
     assert_eq!(response.status().as_u16(), 401);
+    app.clean_up().await;
 }
 
 #[tokio::test]
@@ -82,4 +84,5 @@ async fn should_return_200_if_valid_jwt_cookie() {
     // let no_body = serde_json::json!({});
     // let response = app.post("logout", &no_body).await;
     // assert_eq!(response.status().as_u16(), 400); // cookie should be missing
+    app.clean_up().await;
 }

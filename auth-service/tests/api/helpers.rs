@@ -7,8 +7,9 @@ use auth_service::services::mock_email_client::MockEmailClient;
 use auth_service::util::constants::{test, DATABASE_URL};
 use auth_service::{get_postgres_pool, Application};
 use reqwest::cookie::Jar;
-use sqlx::postgres::PgPoolOptions;
-use sqlx::{Executor, PgPool};
+use sqlx::postgres::{PgConnectOptions, PgPoolOptions};
+use sqlx::{Connection, Executor, PgConnection, PgPool};
+use std::str::FromStr;
 use std::sync::Arc;
 use tokio::sync::RwLock;
 use uuid::Uuid;
@@ -19,12 +20,30 @@ pub struct TestApp {
     pub http_client: reqwest::Client,
     pub banned_token: BanStoreType,
     pub two_fa_code_store: TwoFACodeStoreType,
+    pub db_name: String,
+    cleanup_called: bool,
     // pub user_store:HashmapUserStore,
 }
 
+impl Drop for TestApp {
+    fn drop(&mut self) {
+        if !self.cleanup_called {
+            panic!("TestApp instance dropped without calling clean_up()! This may leave behind test databases.");
+        }
+    }
+}
+
 impl TestApp {
+    pub async fn clean_up(mut self) {
+        delete_database(&self.db_name).await;
+        self.cleanup_called = true;
+    }
+
     pub async fn new() -> Self {
-        let pg_pool = configure_postgresql().await;
+        // We are creating a new database for each test case, and we need to ensure each database has a unique name!
+        let db_name = Uuid::new_v4().to_string();
+
+        let pg_pool = configure_postgresql(&db_name).await;
 
         let user_store: UserStoreType =
             Arc::new(RwLock::new(Box::new(PostgresUserStore::new(pg_pool))));
@@ -62,6 +81,8 @@ impl TestApp {
 
         // Create a new ` TestApp ` instance and return it
         TestApp {
+            cleanup_called: false,
+            db_name,
             address,
             cookie_jar,
             http_client,
@@ -136,14 +157,11 @@ pub fn get_random_email() -> String {
     format!("{}@example.com", Uuid::new_v4())
 }
 
-async fn configure_postgresql() -> PgPool {
-    // We are creating a new database for each test case, and we need to ensure each database has a unique name!
-    let db_name = Uuid::new_v4().to_string();
-
+async fn configure_postgresql(db_name: &String) -> PgPool {
     // configure_database(&postgresql_conn_url, &db_name).await;
     configure_database(&DATABASE_URL, &db_name).await;
 
-    let postgresql_conn_url_with_db = format!("{}/{}", &DATABASE_URL.to_string(), db_name);
+    let postgresql_conn_url_with_db = format!("{}/{}", &DATABASE_URL.to_string(), &db_name);
 
     // Create a new connection pool and return it
     get_postgres_pool(&postgresql_conn_url_with_db)
@@ -176,4 +194,37 @@ async fn configure_database(db_conn_string: &str, db_name: &str) {
         .run(&connection)
         .await
         .expect("Failed to migrate the database");
+}
+async fn delete_database(db_name: &str) {
+    let postgresql_conn_url: String = DATABASE_URL.to_owned();
+
+    let connection_options = PgConnectOptions::from_str(&postgresql_conn_url)
+        .expect("Failed to parse PostgreSQL connection string");
+
+    let mut connection = PgConnection::connect_with(&connection_options)
+        .await
+        .expect("Failed to connect to Postgres");
+
+    // Kill any active connections to the database
+    connection
+        .execute(
+            format!(
+                r#"
+                SELECT pg_terminate_backend(pg_stat_activity.pid)
+                FROM pg_stat_activity
+                WHERE pg_stat_activity.datname = '{}'
+                  AND pid <> pg_backend_pid();
+        "#,
+                db_name
+            )
+            .as_str(),
+        )
+        .await
+        .expect("Failed to drop the database.");
+
+    // Drop the database
+    connection
+        .execute(format!(r#"DROP DATABASE "{}";"#, db_name).as_str())
+        .await
+        .expect("Failed to drop the database.");
 }

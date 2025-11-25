@@ -28,16 +28,19 @@ async fn should_return_206_if_valid_credentials_and_2fa_enabled() {
 
     let login_id: &str = json_body.login_attempt_id.as_ref();
     let email_of_user = Email::parse(useremail).unwrap();
-    let o = app.two_fa_code_store.read().await;
-    let should_id = o
-        .as_ref()
-        .get_code(&email_of_user)
-        .await
-        .unwrap()
-        .0
-        .as_ref();
+    {
+        let o = app.two_fa_code_store.read().await;
+        let should_id = o
+            .as_ref()
+            .get_code(&email_of_user)
+            .await
+            .unwrap()
+            .0
+            .as_ref();
 
-    assert!(login_id == should_id);
+        assert!(login_id == should_id);
+    }
+    app.clean_up().await;
 }
 
 #[tokio::test]
@@ -50,6 +53,7 @@ async fn should_return_422_if_malformed_credentials() {
 
     let res = app.post_login(&test1).await;
     assert_eq!(res.status().as_u16(), 422);
+    app.clean_up().await;
 }
 
 #[tokio::test]
@@ -77,6 +81,7 @@ async fn should_return_400_if_invalid_input() {
         let response = app.post_login(test_case).await;
         assert_eq!(response.status().as_u16(), 400);
     }
+    app.clean_up().await;
 }
 #[tokio::test]
 async fn should_return_401_if_incorrect_credentials() {
@@ -111,6 +116,7 @@ async fn should_return_401_if_incorrect_credentials() {
 
     let response = app.post_login(&invalid_credentials).await;
     assert_eq!(response.status().as_u16(), 400);
+    app.clean_up().await;
 }
 #[tokio::test]
 async fn validate_user_credentials() {
@@ -143,6 +149,7 @@ async fn validate_user_credentials() {
 
     let response = app.post_login(&valid_credentials).await;
     assert_eq!(response.status().as_u16(), 401);
+    app.clean_up().await;
 }
 
 #[tokio::test]
@@ -178,4 +185,5 @@ async fn should_return_200_if_valid_credentials_and_2fa_disabled() {
         .expect("No auth cookie found");
 
     assert!(!auth_cookie.value().is_empty());
+    app.clean_up().await;
 }
