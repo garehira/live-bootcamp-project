@@ -33,7 +33,10 @@ pub async fn logout(
     // ban that sucker
 
     let mut ban_store = state.ban_store.write().await;
-    ban_store.ban(token.to_string()).await;
+    ban_store
+        .add_token(token.to_string())
+        .await
+        .map_err(|_| AuthAPIError::UnexpectedError)?;
     let _ = jar.remove(c);
 
     Ok(())

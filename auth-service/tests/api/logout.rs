@@ -76,8 +76,9 @@ async fn should_return_200_if_valid_jwt_cookie() {
         .banned_token
         .read()
         .await
-        .is_banned(&jwt_cookie.value().to_string())
-        .await;
+        .contains_token(&jwt_cookie.value().to_string())
+        .await
+        .unwrap();
     assert!(token_banned);
 
     // are we really logged out?
