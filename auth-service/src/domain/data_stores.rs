@@ -40,7 +40,7 @@ pub trait TwoFACodeStore: Send + Sync {
     async fn get_code(
         &self,
         email: &Email,
-    ) -> Result<&(LoginAttemptId, TwoFACode), TwoFACodeStoreError>;
+    ) -> Result<(LoginAttemptId, TwoFACode), TwoFACodeStoreError>;
 }
 #[derive(Debug, PartialEq, Clone, Hash, Eq)]
 pub struct LoginAttemptId(String);

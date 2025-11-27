@@ -38,7 +38,7 @@ pub async fn verify_2fa(
             .map_err(|_| AuthAPIError::IncorrectCredentials)?;
         // .to_owned(); // this is the easy way to end the life of lock and get the data out.
 
-        if *found_state != (login_attempt_id, two_fa_code) {
+        if found_state != (login_attempt_id, two_fa_code) {
             return Err(AuthAPIError::IncorrectCredentials);
         }
     } // end of life for lock

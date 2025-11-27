@@ -36,9 +36,9 @@ impl TwoFACodeStore for HashmapTwoFACodeStore {
     async fn get_code(
         &self,
         email: &Email,
-    ) -> Result<&(LoginAttemptId, TwoFACode), TwoFACodeStoreError> {
+    ) -> Result<(LoginAttemptId, TwoFACode), TwoFACodeStoreError> {
         match self.codes.get(email) {
-            Some(code) => Ok(code),
+            Some(code) => Ok(code.clone()),
             None => Err(TwoFACodeStoreError::UnexpectedError),
         }
     }
@@ -84,8 +84,8 @@ mod tests {
         let result = store.get_code(&email).await;
         assert!(result.is_ok());
         let (stored_id, stored_code) = result.unwrap();
-        assert_eq!(stored_id, &login_attempt_id);
-        assert_eq!(stored_code, &code);
+        assert_eq!(stored_id, login_attempt_id);
+        assert_eq!(stored_code, code);
     }
 
     // #[tokio::test]

@@ -1,11 +1,11 @@
 use auth_service::app_state::{AppState, TwoFACodeStoreType, UserStoreType};
 use auth_service::app_state::{BanStoreType, EmailClientType};
 use auth_service::services::data_stares::postgres_user_store::PostgresUserStore;
-use auth_service::services::hashmap_two_fa_code_store::HashmapTwoFACodeStore;
+use auth_service::services::data_stares::redis_two_fa_code_store::RedisTwoFACodeStore;
 use auth_service::services::hashset_bannedtoken_store::HashsetBannedTokenStore;
 use auth_service::services::mock_email_client::MockEmailClient;
-use auth_service::util::constants::{test, DATABASE_URL};
-use auth_service::{get_postgres_pool, Application};
+use auth_service::util::constants::{test, DATABASE_URL, REDIS_HOST_NAME};
+use auth_service::{get_postgres_pool, get_redis_client, Application};
 use reqwest::cookie::Jar;
 use sqlx::postgres::{PgConnectOptions, PgPoolOptions};
 use sqlx::{Connection, Executor, PgConnection, PgPool};
@@ -44,14 +44,16 @@ impl TestApp {
         let db_name = Uuid::new_v4().to_string();
 
         let pg_pool = configure_postgresql(&db_name).await;
+        let redis = configure_redis();
 
         let user_store: UserStoreType =
             Arc::new(RwLock::new(Box::new(PostgresUserStore::new(pg_pool))));
 
         let banned_token: BanStoreType =
             Arc::new(RwLock::new(Box::new(HashsetBannedTokenStore::default())));
-        let two_fa_store: TwoFACodeStoreType =
-            Arc::new(RwLock::new(Box::new(HashmapTwoFACodeStore::default())));
+        let two_fa_store: TwoFACodeStoreType = Arc::new(RwLock::new(Box::new(
+            RedisTwoFACodeStore::new(Arc::new(RwLock::new(redis))),
+        )));
         let email_client: EmailClientType =
             Arc::new(RwLock::new(Box::new(MockEmailClient::default())));
         let app_state = AppState::new(
@@ -151,6 +153,12 @@ impl TestApp {
             .await
             .expect("Failed to execute request.")
     }
+}
+pub fn configure_redis() -> redis::Connection {
+    get_redis_client(REDIS_HOST_NAME.to_owned())
+        .expect("Failed to get Redis client")
+        .get_connection()
+        .expect("Failed to get Redis connection")
 }
 
 pub fn get_random_email() -> String {

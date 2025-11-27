@@ -30,13 +30,8 @@ async fn should_return_206_if_valid_credentials_and_2fa_enabled() {
     let email_of_user = Email::parse(useremail).unwrap();
     {
         let o = app.two_fa_code_store.read().await;
-        let should_id = o
-            .as_ref()
-            .get_code(&email_of_user)
-            .await
-            .unwrap()
-            .0
-            .as_ref();
+        let login_code = o.as_ref().get_code(&email_of_user).await.unwrap();
+        let should_id = login_code.0.as_ref();
 
         assert!(login_id == should_id);
     }

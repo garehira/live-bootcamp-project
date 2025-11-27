@@ -47,7 +47,7 @@ async fn configure_postgresql() -> PgPool {
     pg_pool
 }
 
-fn configure_redis() -> redis::Connection {
+pub fn configure_redis() -> redis::Connection {
     get_redis_client(REDIS_HOST_NAME.to_owned())
         .expect("Failed to get Redis client")
         .get_connection()
