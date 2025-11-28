@@ -30,7 +30,6 @@ async fn should_return_422_if_malformed_input() {
         );
     }
 
-    //...
     app.clean_up().await;
 }
 

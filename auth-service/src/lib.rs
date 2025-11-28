@@ -2,6 +2,7 @@ use crate::app_state::AppState;
 use crate::routes::{login, logout, signup, verify_2fa, verify_token};
 use http::Method;
 
+use crate::util::tracing::{make_span_with_request_id, on_request, on_response};
 use axum::routing::post;
 use axum::serve::Serve;
 use axum::Router;
@@ -12,6 +13,7 @@ use sqlx::postgres::PgPoolOptions;
 use sqlx::PgPool;
 use std::error::Error;
 use std::sync::Arc;
+use tower_http::trace::TraceLayer;
 use tower_http::{cors::CorsLayer, services::ServeDir};
 
 pub mod app_state;
@@ -36,7 +38,7 @@ impl Application {
             // "http://[YOUR_DROPLET_IP]:8000".parse()?,
         ];
 
-        let _cors = CorsLayer::new()
+        let cors = CorsLayer::new()
             // Allow GET and POST requests
             //     .allow_methods([axum::http::Method::GET, axum::http::Method::POST])
             .allow_methods([Method::GET, Method::POST])
@@ -53,7 +55,14 @@ impl Application {
             .route("/verify-2fa", post(verify_2fa))
             .route("/logout", post(logout))
             .route("/verify-token", post(verify_token))
-            .with_state(Arc::new(app_state));
+            .with_state(Arc::new(app_state))
+            .layer(cors)
+            .layer(
+                TraceLayer::new_for_http()
+                    .make_span_with(make_span_with_request_id)
+                    .on_request(on_request)
+                    .on_response(on_response),
+            );
 
         let listener = tokio::net::TcpListener::bind(address).await?;
         let address = listener.local_addr()?.to_string();
@@ -64,7 +73,7 @@ impl Application {
     }
 
     pub async fn run(self) -> Result<(), std::io::Error> {
-        println!("listening on {}", &self.address);
+        tracing::info!("listening on {}", &self.address);
         self.server.await
     }
 }

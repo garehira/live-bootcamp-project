@@ -15,6 +15,7 @@ run the DB standalone \
 ```shell
 
 docker start ps-db
+docker start redis-db
 ```
 
 Stop standalone database
@@ -22,6 +23,7 @@ Stop standalone database
 ```shell
 
 docker stop ps-db
+docker stop redis-db
 ```
 
 Docker down
@@ -30,3 +32,5 @@ Docker down
 
 docker compose down
 ```
+
+docker run --name redis-db -p "6379:6379" -d redis:7.0-alpine
