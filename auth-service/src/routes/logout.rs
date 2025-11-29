@@ -16,10 +16,6 @@ pub async fn logout(
     let cookie = jar.get(JWT_COOKIE_NAME).ok_or(AuthAPIError::MissingToken)?;
 
     let token = cookie.value().to_owned();
-
-    // TODO: Validate JWT token by calling `validate_token` from the auth service.
-    // If the token is valid you can ignore the returned claims for now.
-    // Return AuthAPIError::InvalidToken is validation fails.
     validate_token(&token)
         .await
         .map_err(|_| AuthAPIError::InvalidToken)?;
@@ -36,7 +32,7 @@ pub async fn logout(
     ban_store
         .add_token(token.to_string())
         .await
-        .map_err(|_| AuthAPIError::UnexpectedError)?;
+        .map_err(|e| AuthAPIError::UnexpectedError(e.into()))?;
     let _ = jar.remove(c);
 
     Ok(())

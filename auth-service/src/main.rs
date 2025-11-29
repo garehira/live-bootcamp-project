@@ -11,7 +11,8 @@ use tokio::sync::RwLock;
 
 #[tokio::main]
 async fn main() {
-    init_tracing();
+    color_eyre::install().expect("Failed to install color_eyre");
+    init_tracing().expect("Init tracing failed");
     let pg_pool = configure_postgresql().await;
     let redis_pool = Arc::new(RwLock::new(configure_redis()));
 

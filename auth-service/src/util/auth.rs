@@ -5,6 +5,7 @@ use serde::{Deserialize, Serialize};
 
 use super::constants::{JWT_COOKIE_NAME, JWT_SECRET};
 use crate::domain::email::Email;
+use std::fmt;
 
 // Create cookie with a new JWT auth token
 pub fn generate_auth_cookie(email: &Email) -> Result<Cookie<'static>, GenerateTokenError> {
@@ -29,6 +30,14 @@ pub enum GenerateTokenError {
     UnexpectedError,
 }
 
+impl fmt::Display for GenerateTokenError {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            GenerateTokenError::TokenError(e) => write!(f, "Token error: {}", e),
+            GenerateTokenError::UnexpectedError => write!(f, "Unexpected error occurred"),
+        }
+    }
+}
 // This value determines how long the JWT auth token is valid for
 pub const TOKEN_TTL_SECONDS: i64 = 600; // 10 minutes
 

@@ -22,7 +22,7 @@ impl BannedTokenStore for RedisBannedTokenStore {
         let key = get_key(&token);
         let mut red = self.conn.write().await;
 
-        red.set_ex(&key, true, TOKEN_TTL_SECONDS as u64)
+        red.set_ex::<_, _, ()>(&key, true, TOKEN_TTL_SECONDS as u64)
             .map_err(|_| BannedTokenStoreError::UnexpectedError)?;
 
         Ok(())

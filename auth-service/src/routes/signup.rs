@@ -17,7 +17,7 @@ pub struct SignupRequest {
     #[serde(rename = "requires2FA")]
     pub requires_2fa: bool,
 }
-#[tracing::instrument(name = "Signup", skip_all, err(Debug))]
+#[tracing::instrument(name = "Signup", skip_all)]
 pub async fn signup(
     State(state): State<Arc<AppState>>,
     Json(request): Json<SignupRequest>,
@@ -37,7 +37,7 @@ pub async fn signup(
     user_store
         .add_user(user)
         .await
-        .map_err(|_| AuthAPIError::UnexpectedError)?;
+        .map_err(|e| AuthAPIError::UnexpectedError(e.into()))?;
 
     let response = Json(SignupResponse {
         message: "User created successfully!".to_string(),

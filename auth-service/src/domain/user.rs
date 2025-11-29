@@ -1,5 +1,6 @@
 use crate::domain::email::{Email, ParseError};
 use crate::domain::password::{Password, PasswordError};
+use thiserror::Error;
 
 // The User struct should contain 3 fields. email, which is a String;
 // password, which is also a String; and requires_2fa, which is a boolean.
@@ -15,10 +16,13 @@ pub struct UserRow {
     pub requires_2fa: bool,
 }
 
-#[derive(Debug, PartialEq, Clone)]
+#[derive(Debug, PartialEq, Clone, Error)]
 pub enum UserError {
+    #[error("EmailError")]
     EmailError(ParseError),
+    #[error("PasswordError")]
     PasswordError(PasswordError),
+    #[error("DBLoadError")]
     DBLoadError,
 }
 

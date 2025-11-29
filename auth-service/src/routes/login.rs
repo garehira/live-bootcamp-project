@@ -7,6 +7,7 @@ use axum::extract::State;
 use axum::response::IntoResponse;
 use axum::Json;
 use axum_extra::extract::CookieJar;
+use color_eyre::eyre::eyre;
 use http::StatusCode;
 use serde::{Deserialize, Serialize};
 use std::sync::Arc;
@@ -29,12 +30,10 @@ pub async fn login(
     user_store.validate_user(&email, &password).await?;
 
     let auth_cookie = crate::util::auth::generate_auth_cookie(&email)
-        .map_err(|_| AuthAPIError::UnexpectedError)?;
+        .map_err(|e| AuthAPIError::UnexpectedError(eyre!(e)))?;
 
     let updated_jar = jar.add(auth_cookie);
-
     let user = user_store.get_user(&email).await?;
-
     let res = if user.requires_2fa {
         handle_2fa(&user.email, &state).await?
     } else {
