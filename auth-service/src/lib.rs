@@ -3,6 +3,7 @@ use crate::routes::{login, logout, signup, verify_2fa, verify_token};
 use http::Method;
 
 use crate::util::tracing::{make_span_with_request_id, on_request, on_response};
+use axum::routing::get;
 use axum::routing::post;
 use axum::serve::Serve;
 use axum::Router;
@@ -13,6 +14,7 @@ use sqlx::postgres::PgPoolOptions;
 use sqlx::PgPool;
 use std::error::Error;
 use std::sync::Arc;
+use tower_http::services::ServeFile;
 use tower_http::trace::TraceLayer;
 use tower_http::{cors::CorsLayer, services::ServeDir};
 
@@ -32,6 +34,8 @@ pub struct Application {
 
 impl Application {
     pub async fn build(app_state: AppState, address: &str) -> Result<Self, Box<dyn Error>> {
+        let asset_dir =
+            ServeDir::new("assets").not_found_service(ServeFile::new("assets/index.html"));
         let allowed_origins = [
             "http://localhost:8000".parse()?,
             // TODO: Replace [YOUR_DROPLET_IP] with your Droplet IP address
@@ -39,21 +43,18 @@ impl Application {
         ];
 
         let cors = CorsLayer::new()
-            // Allow GET and POST requests
-            //     .allow_methods([axum::http::Method::GET, axum::http::Method::POST])
             .allow_methods([Method::GET, Method::POST])
-            //     .allow_methods::<AllowMethods>(reqwest::Method::GET.into())
-            // Allow cookies to be included in requests
             .allow_credentials(true)
             .allow_origin(allowed_origins);
 
         let router = Router::new()
-            .nest_service("/", ServeDir::new("assets"))
+            .fallback_service(asset_dir)
+            // .nest_service("/", ServeDir::new("assets"))
             // .route("/", get(login))
             .route("/signup", post(signup))
-            // .route("/login", post(login))
-            // .route("/verify-2fa", post(verify_2fa))
-            // .route("/logout", post(logout))
+            .route("/login", post(login))
+            .route("/verify-2fa", post(verify_2fa))
+            .route("/logout", post(logout))
             .route("/verify-token", post(verify_token))
             .with_state(Arc::new(app_state))
             .layer(cors)
@@ -63,7 +64,6 @@ impl Application {
                     .on_request(on_request)
                     .on_response(on_response),
             );
-
         let listener = tokio::net::TcpListener::bind(address).await?;
         let address = listener.local_addr()?.to_string();
         let server = axum::serve(listener, router);

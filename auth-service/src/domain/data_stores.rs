@@ -1,7 +1,9 @@
 use crate::domain::email::Email;
 use crate::domain::password::Password;
 use crate::domain::user::User;
+use color_eyre::eyre::{eyre, Context};
 use color_eyre::Report;
+use color_eyre::Result;
 use rand::Rng;
 use thiserror::Error;
 use uuid::Uuid;
@@ -41,7 +43,7 @@ pub trait UserStore: Send + Sync {
 #[derive(Debug, Error)]
 pub enum BannedTokenStoreError {
     #[error("Unexpected error")]
-    UnexpectedError,
+    UnexpectedError(#[source] Report),
 }
 #[async_trait::async_trait]
 pub trait BannedTokenStore: Send + Sync {
@@ -65,9 +67,13 @@ pub trait TwoFACodeStore: Send + Sync {
 #[derive(Debug, PartialEq, Clone, Hash, Eq)]
 pub struct LoginAttemptId(String);
 impl LoginAttemptId {
-    pub fn parse(id: String) -> Result<Self, uuid::Error> {
+    pub fn parse(id: String) -> Result<Self> {
         // Use the `parse_str` function from the `uuid` crate to ensure `id` is a valid UUID
-        Ok(Self(Uuid::parse_str(id.as_str())?.to_string()))
+        Ok(Self(
+            Uuid::parse_str(&id)
+                .wrap_err("Invalid login attempt id")?
+                .to_string(),
+        ))
     }
     pub fn as_ref(&self) -> &str {
         &self.0
@@ -93,10 +99,10 @@ impl Default for LoginAttemptId {
 pub struct TwoFACode(String);
 
 impl TwoFACode {
-    pub fn parse(code: String) -> Result<Self, String> {
+    pub fn parse(code: String) -> Result<Self> {
         // Ensure `code` is a valid 6-digit code
         if code.len() != 6 {
-            return Err("Invalid code".to_string());
+            return Err(eyre!("Invalid 2FA code"));
         }
         Ok(Self(code))
     }
@@ -114,8 +120,21 @@ impl Default for TwoFACode {
     }
 }
 
-#[derive(Debug, PartialEq, Clone)]
+#[derive(Debug, Error)]
 pub enum TwoFACodeStoreError {
+    #[error("User already exists")]
     LoginAttemptIdNotFound,
-    UnexpectedError,
+    #[error("Unexpected error")]
+    UnexpectedError(#[source] Report),
+}
+
+// New!
+impl PartialEq for TwoFACodeStoreError {
+    fn eq(&self, other: &Self) -> bool {
+        matches!(
+            (self, other),
+            (Self::LoginAttemptIdNotFound, Self::LoginAttemptIdNotFound)
+                | (Self::UnexpectedError(_), Self::UnexpectedError(_))
+        )
+    }
 }

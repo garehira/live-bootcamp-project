@@ -1,7 +1,7 @@
-use std::sync::Arc;
-
+use color_eyre::eyre::Context;
 use redis::{Commands, Connection};
 use serde::{Deserialize, Serialize};
+use std::sync::Arc;
 use tokio::sync::RwLock;
 
 use crate::domain::{
@@ -14,6 +14,7 @@ pub struct RedisTwoFACodeStore {
 }
 
 impl RedisTwoFACodeStore {
+    #[tracing::instrument(name = "new 2fa redis", skip_all)]
     pub fn new(conn: Arc<RwLock<Connection>>) -> Self {
         Self { conn }
     }
@@ -21,6 +22,7 @@ impl RedisTwoFACodeStore {
 
 #[async_trait::async_trait]
 impl TwoFACodeStore for RedisTwoFACodeStore {
+    #[tracing::instrument(name = "add_code", skip_all)]
     async fn add_code(
         &mut self,
         email: Email,
@@ -35,8 +37,9 @@ impl TwoFACodeStore for RedisTwoFACodeStore {
             code.as_ref().to_owned(),
         );
         // 3. Use serde_json::to_string to serialize the TwoFATuple instance into a JSON string.
-        let jfa =
-            serde_json::to_string(&fatuple).map_err(|_| TwoFACodeStoreError::UnexpectedError)?;
+        let jfa = serde_json::to_string(&fatuple)
+            .wrap_err("failed to serialize 2FA tuple")
+            .map_err(TwoFACodeStoreError::UnexpectedError)?;
         // Return TwoFACodeStoreError::UnexpectedError if serialization fails.
         // 4. Call the set_ex command on the Redis connection to set a new key/value pair with an expiration time (TTL).
         // The value should be the serialized 2FA tuple.
@@ -46,11 +49,12 @@ impl TwoFACodeStore for RedisTwoFACodeStore {
             .write()
             .await
             .set_ex::<_, _, ()>(&key, jfa, TEN_MINUTES_IN_SECONDS)
-            .map_err(|_| TwoFACodeStoreError::UnexpectedError)?;
+            .wrap_err("failed to set 2FA code")
+            .map_err(TwoFACodeStoreError::UnexpectedError)?;
 
         Ok(())
     }
-
+    #[tracing::instrument(name = "remove code", skip_all)]
     async fn remove_code(&mut self, email: &Email) -> Result<(), TwoFACodeStoreError> {
         // 1. Create a new key using the get_key helper function.
         let key = get_key(&email);
@@ -60,9 +64,10 @@ impl TwoFACodeStore for RedisTwoFACodeStore {
             .write()
             .await
             .del(&key)
-            .map_err(|_| TwoFACodeStoreError::UnexpectedError)
+            .wrap_err("failed to delete 2FA code")
+            .map_err(TwoFACodeStoreError::UnexpectedError)
     }
-
+    #[tracing::instrument(name = "get code", skip_all)]
     async fn get_code(
         &self,
         email: &Email,
@@ -76,15 +81,17 @@ impl TwoFACodeStore for RedisTwoFACodeStore {
             .write()
             .await
             .get(key)
+            .wrap_err("failed to get 2FA code")
             .map_err(|_| TwoFACodeStoreError::LoginAttemptIdNotFound)?;
         // If the operation succeeds, call serde_json::from_str to parse the JSON string into a TwoFATuple.
-        let TwoFATuple(login_att, code2fa) =
-            serde_json::from_str(&*code).map_err(|_| TwoFACodeStoreError::UnexpectedError)?;
+        let TwoFATuple(login_att, code2fa) = serde_json::from_str(&*code)
+            .wrap_err("failed to get 2FA code.")
+            .map_err(TwoFACodeStoreError::UnexpectedError)?;
         // Then, parse the login attempt ID string and 2FA code string into a LoginAttemptId and TwoFACode type respectively.
         let login_as_type =
-            LoginAttemptId::parse(login_att).map_err(|_| TwoFACodeStoreError::UnexpectedError)?;
+            LoginAttemptId::parse(login_att).map_err(TwoFACodeStoreError::UnexpectedError)?;
         let code_as_type =
-            TwoFACode::parse(code2fa).map_err(|_| TwoFACodeStoreError::UnexpectedError)?;
+            TwoFACode::parse(code2fa).map_err(TwoFACodeStoreError::UnexpectedError)?;
         // Return TwoFACodeStoreError::UnexpectedError if parsing fails.
         Ok((login_as_type, code_as_type))
     }
@@ -95,7 +102,7 @@ struct TwoFATuple(pub String, pub String);
 
 const TEN_MINUTES_IN_SECONDS: u64 = 600;
 const TWO_FA_CODE_PREFIX: &str = "two_fa_code:";
-
+#[tracing::instrument(name = "get key", skip_all)]
 fn get_key(email: &Email) -> String {
     format!("{}{}", TWO_FA_CODE_PREFIX, email.as_ref())
 }

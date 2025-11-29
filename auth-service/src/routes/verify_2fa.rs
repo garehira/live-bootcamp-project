@@ -6,6 +6,7 @@ use axum::extract::State;
 use axum::response::IntoResponse;
 use axum::Json;
 use axum_extra::extract::CookieJar;
+use color_eyre::eyre::Result;
 use serde::{Deserialize, Serialize};
 use std::sync::Arc;
 
@@ -23,7 +24,8 @@ pub async fn verify_2fa(
     _jar: CookieJar,
     Json(request): Json<Verify2FARequest>,
 ) -> Result<impl IntoResponse, AuthAPIError> {
-    let login_attempt_id = LoginAttemptId::parse(request.login_attempt_id)?;
+    let login_attempt_id =
+        LoginAttemptId::parse(request.login_attempt_id).map_err(AuthAPIError::UnexpectedError)?;
     let email = Email::parse(request.email)?;
     let two_fa_code =
         TwoFACode::parse(request.two_fa_code).map_err(|_| AuthAPIError::InvalidToken)?;

@@ -86,8 +86,6 @@ async fn verify_password_hash(
     .await?
 }
 
-type ErrorType = Box<dyn std::error::Error + Send + Sync>;
-
 #[tracing::instrument(name = "Computing password hash", skip_all)]
 async fn compute_password_hash(password: &str) -> color_eyre::eyre::Result<String> {
     let pwd = password.to_owned();

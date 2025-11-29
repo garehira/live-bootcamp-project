@@ -1,3 +1,4 @@
+use color_eyre::eyre::Result;
 #[derive(Debug, PartialEq, Clone, thiserror::Error)]
 pub enum PasswordError {
     #[error("Password must be at least 8 characters long")]

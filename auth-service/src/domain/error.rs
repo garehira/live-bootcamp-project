@@ -90,9 +90,7 @@ impl From<String> for AuthAPIError {
 impl From<TwoFACodeStoreError> for AuthAPIError {
     fn from(error: TwoFACodeStoreError) -> Self {
         match error {
-            TwoFACodeStoreError::UnexpectedError => {
-                AuthAPIError::UnexpectedError(eyre!("UnexpectedError"))
-            }
+            TwoFACodeStoreError::UnexpectedError(_) => AuthAPIError::UnexpectedError(error.into()),
             TwoFACodeStoreError::LoginAttemptIdNotFound => AuthAPIError::IncorrectCredentials,
         }
     }

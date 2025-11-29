@@ -1,11 +1,14 @@
+use color_eyre::eyre::Result;
 use std::ops::Deref;
+use thiserror::Error;
 
 #[derive(sqlx::Type)]
 #[sqlx(transparent)]
 #[derive(sqlx::FromRow, Debug, PartialEq, Clone, Hash, Eq)]
 pub struct Email(String);
-#[derive(Debug, PartialEq, Clone)]
+#[derive(Debug, Error, Clone)]
 pub enum ParseError {
+    #[error("InvalidEmail")]
     InvalidEmail,
 }
 

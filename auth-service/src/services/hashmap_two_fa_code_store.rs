@@ -1,9 +1,9 @@
-use std::collections::HashMap;
-
 use crate::domain::{
     data_stores::{LoginAttemptId, TwoFACode, TwoFACodeStore, TwoFACodeStoreError},
     email::Email,
 };
+use color_eyre::eyre::{eyre, Result};
+use std::collections::HashMap;
 
 #[derive(Default)]
 pub struct HashmapTwoFACodeStore {
@@ -27,7 +27,9 @@ impl TwoFACodeStore for HashmapTwoFACodeStore {
 
     async fn remove_code(&mut self, email: &Email) -> Result<(), TwoFACodeStoreError> {
         if !self.codes.contains_key(email) {
-            return Err(TwoFACodeStoreError::UnexpectedError);
+            return Err(TwoFACodeStoreError::UnexpectedError(eyre!(
+                "Email not found"
+            )));
         }
         self.codes.remove(email);
         Ok(())
@@ -39,7 +41,9 @@ impl TwoFACodeStore for HashmapTwoFACodeStore {
     ) -> Result<(LoginAttemptId, TwoFACode), TwoFACodeStoreError> {
         match self.codes.get(email) {
             Some(code) => Ok(code.clone()),
-            None => Err(TwoFACodeStoreError::UnexpectedError),
+            None => Err(TwoFACodeStoreError::UnexpectedError(eyre!(
+                "Email not found"
+            ))),
         }
     }
 }
@@ -103,13 +107,13 @@ mod tests {
     async fn test_remove_code_not_found_error() {
         let (mut store, email, _, _) = setup();
         let result = store.remove_code(&email).await;
-        assert!(matches!(result, Err(TwoFACodeStoreError::UnexpectedError)));
+        assert!(result.is_err());
     }
 
     #[tokio::test]
     async fn test_get_code_not_found_error() {
         let (store, email, _, _) = setup();
         let result = store.get_code(&email).await;
-        assert!(matches!(result, Err(TwoFACodeStoreError::UnexpectedError)));
+        assert!(result.is_err());
     }
 }

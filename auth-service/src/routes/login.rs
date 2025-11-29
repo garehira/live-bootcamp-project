@@ -17,7 +17,7 @@ pub struct LoginRequest {
     pub email: String,
     pub password: String,
 }
-
+#[tracing::instrument(name = "Login", skip_all)]
 pub async fn login(
     State(state): State<Arc<AppState>>,
     jar: CookieJar,
@@ -42,6 +42,7 @@ pub async fn login(
     Ok((updated_jar, res))
 }
 
+#[tracing::instrument(name = "handle_2fa", skip_all)]
 async fn handle_2fa(
     email: &Email,
     app_state: &Arc<AppState>,
@@ -55,7 +56,8 @@ async fn handle_2fa(
         .write()
         .await
         .send_email(email, "Here is your 2FA Token", two_fa_code.as_ref())
-        .await?;
+        .await
+        .map_err(|e| AuthAPIError::UnexpectedError(e))?;
 
     let mut write_lock = app_state.two_fa_code_store.write().await;
 
@@ -74,6 +76,7 @@ async fn handle_2fa(
     Ok((status_code, response))
 }
 
+#[tracing::instrument(name = "handle_no_2fa", skip_all)]
 async fn handle_no_2fa() -> Result<(StatusCode, Json<LoginResponse>), AuthAPIError> {
     let response = Json(LoginResponse::RegularAuth);
     let statuscode = StatusCode::OK;
