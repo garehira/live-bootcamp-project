@@ -1,11 +1,29 @@
 use color_eyre::eyre::Result;
+use secrecy::{ExposeSecret, Secret};
+use std::hash::Hash;
 use std::ops::Deref;
 use thiserror::Error;
 
-#[derive(sqlx::Type)]
-#[sqlx(transparent)]
-#[derive(sqlx::FromRow, Debug, PartialEq, Clone, Hash, Eq)]
-pub struct Email(String);
+#[derive(Debug, Clone)] // Updated!
+pub struct Email(Secret<String>); // Updated!
+
+// New!
+impl PartialEq for Email {
+    fn eq(&self, other: &Self) -> bool {
+        self.0.expose_secret() == other.0.expose_secret()
+    }
+}
+
+// New!
+impl Hash for Email {
+    fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
+        self.0.expose_secret().hash(state);
+    }
+}
+
+// New!
+impl Eq for Email {}
+
 #[derive(Debug, Error, Clone)]
 pub enum ParseError {
     #[error("InvalidEmail")]
@@ -17,7 +35,7 @@ impl Email {
         if !email.contains('@') {
             return Err(ParseError::InvalidEmail);
         }
-        Ok(Email(email))
+        Ok(Email(Secret::new(email)))
     }
 
     pub fn unwrap(email: &str) -> Self {
@@ -25,20 +43,12 @@ impl Email {
     }
 }
 
-impl AsRef<str> for Email {
-    fn as_ref(&self) -> &str {
+impl AsRef<Secret<String>> for Email {
+    fn as_ref(&self) -> &Secret<String> {
         &self.0
     }
 }
 
-impl Deref for Email {
-    type Target = String;
-
-    fn deref(&self) -> &Self::Target {
-        &self.0
-    }
-}
-//*** make password type
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -48,7 +58,7 @@ mod tests {
         let email = "test@example.com".to_string();
         let result = Email::parse(email.clone());
         assert!(result.is_ok());
-        assert_eq!(result.unwrap().as_ref(), email);
+        assert_eq!(*result.unwrap().as_ref().expose_secret(), email);
     }
 
     #[test]

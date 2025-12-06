@@ -2,6 +2,7 @@ use argon2::{
     password_hash::SaltString, Algorithm, Argon2, Params, PasswordHash, PasswordHasher,
     PasswordVerifier, Version,
 };
+use secrecy::{ExposeSecret, Secret};
 use sqlx::{query, PgPool};
 
 use crate::domain::data_stores::{UserStore, UserStoreError};
@@ -28,7 +29,7 @@ impl UserStore for PostgresUserStore {
             .map_err(|e| UserStoreError::UnexpectedError(e.into()))?;
         query!(
             "INSERT INTO users (email, password_hash, requires_2fa) VALUES ($1, $2, $3)",
-            user.email.as_ref(),
+            user.email.as_ref().expose_secret(),
             hash,
             user.requires_2fa
         )
@@ -39,10 +40,14 @@ impl UserStore for PostgresUserStore {
     }
     #[tracing::instrument(name = "Retrieving user from PostgreSQL", skip_all)]
     async fn get_user(&self, email: &Email) -> Result<User, UserStoreError> {
-        let row = sqlx::query_as!(UserRow, "SELECT * FROM USERS WHERE email = $1", email)
-            .fetch_one(&self.pool)
-            .await
-            .map_err(|_| UserStoreError::UserNotFound)?;
+        let row = sqlx::query_as!(
+            UserRow,
+            "SELECT * FROM USERS WHERE email = $1",
+            email.as_ref().expose_secret()
+        )
+        .fetch_one(&self.pool)
+        .await
+        .map_err(|_| UserStoreError::UserNotFound)?;
         //
         // let row: Result<crate::domain::user::User, Error> =
         //     sqlx::query_as("SELECT * FROM USERS WHERE email = $1")
@@ -60,9 +65,12 @@ impl UserStore for PostgresUserStore {
         password: &Password,
     ) -> Result<(), UserStoreError> {
         let user = self.get_user(email).await?;
-        verify_password_hash(user.password_hash.as_ref(), password.as_ref())
-            .await
-            .map_err(|_| UserStoreError::InvalidPassword)
+        verify_password_hash(
+            user.password_hash.as_ref().expose_secret(),
+            password.as_ref().expose_secret(),
+        )
+        .await
+        .map_err(|_| UserStoreError::InvalidPassword)
     }
 }
 #[tracing::instrument(name = "Verify password hash", skip_all)]
@@ -76,7 +84,7 @@ async fn verify_password_hash(
     let cand = password_candidate.to_owned();
     tokio::task::spawn_blocking(move || {
         current_span.in_scope(|| {
-            let exp_hash_str: PasswordHash<'_> = PasswordHash::new(&*exp_hash)?;
+            let exp_hash_str = PasswordHash::new(&*exp_hash)?;
 
             Argon2::default()
                 .verify_password(cand.as_bytes(), &exp_hash_str)
@@ -87,7 +95,7 @@ async fn verify_password_hash(
 }
 
 #[tracing::instrument(name = "Computing password hash", skip_all)]
-async fn compute_password_hash(password: &str) -> color_eyre::eyre::Result<String> {
+async fn compute_password_hash(password: &Secret<String>) -> color_eyre::eyre::Result<String> {
     let pwd = password.to_owned();
     let current_span: tracing::Span = tracing::Span::current();
 
@@ -99,7 +107,7 @@ async fn compute_password_hash(password: &str) -> color_eyre::eyre::Result<Strin
                 Version::V0x13,
                 Params::new(15000, 2, 1, None)?,
             )
-            .hash_password(pwd.as_bytes(), &salt)?
+            .hash_password(pwd.expose_secret().as_bytes(), &salt)?
             .to_string();
 
             // Err(eyre!("oh no!"))

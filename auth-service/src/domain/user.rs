@@ -1,5 +1,6 @@
 use crate::domain::email::{Email, ParseError};
 use crate::domain::password::{Password, PasswordError};
+use secrecy::Secret;
 use thiserror::Error;
 
 // The User struct should contain 3 fields. email, which is a String;
@@ -43,7 +44,7 @@ impl TryFrom<UserRow> for User {
     fn try_from(row: UserRow) -> Result<Self, Self::Error> {
         Ok(User {
             email: Email::parse(row.email)?,
-            password_hash: Password::parse(row.password_hash)?,
+            password_hash: Password::parse(Secret::new(row.password_hash))?,
             requires_2fa: row.requires_2fa,
         })
     }
@@ -53,7 +54,7 @@ impl User {
     pub fn new(email: &str, password: &str, requires_2fa: bool) -> Result<Self, UserError> {
         Ok(User {
             email: Email::parse(email.to_string())?,
-            password_hash: Password::parse(password.to_string())?,
+            password_hash: Password::parse(Secret::new(password.to_string()))?,
             requires_2fa,
         })
     }

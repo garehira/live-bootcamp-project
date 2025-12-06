@@ -44,6 +44,7 @@ impl UserStore for HashmapUserStore {
 #[cfg(test)]
 pub mod tests {
     use super::*;
+    use secrecy::Secret;
 
     pub async fn test_data() -> HashmapUserStore {
         let mut store = HashmapUserStore::default();
@@ -81,14 +82,14 @@ pub mod tests {
         let data = test_data().await;
         data.validate_user(
             &Email::unwrap("hermann@email.com"),
-            &Password::unwrap("password123§!!"),
+            &Password::parse(Secret::new("password123§!!".to_string())).unwrap(),
         )
         .await
         .expect("Failed to validate user");
         assert!(matches!(
             data.validate_user(
                 &Email::unwrap("notfound@email.com"),
-                &Password::unwrap("password3!")
+                &Password::parse(Secret::new("password3!".to_string())).unwrap(),
             )
             .await,
             Err(UserStoreError::UserNotFound)
@@ -96,7 +97,7 @@ pub mod tests {
         assert!(matches!(
             data.validate_user(
                 &Email::unwrap("hermann@email.com"),
-                &Password::unwrap("password4§")
+                &Password::parse(Secret::new("password4§".to_string())).unwrap(),
             )
             .await,
             Err(UserStoreError::InvalidPassword)

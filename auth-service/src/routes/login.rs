@@ -9,13 +9,14 @@ use axum::Json;
 use axum_extra::extract::CookieJar;
 use color_eyre::eyre::eyre;
 use http::StatusCode;
+use secrecy::Secret;
 use serde::{Deserialize, Serialize};
 use std::sync::Arc;
 
 #[derive(Deserialize)]
 pub struct LoginRequest {
     pub email: String,
-    pub password: String,
+    pub password: Secret<String>,
 }
 #[tracing::instrument(name = "Login", skip_all)]
 pub async fn login(
