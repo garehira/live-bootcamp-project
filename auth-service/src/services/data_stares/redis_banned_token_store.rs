@@ -22,13 +22,15 @@ impl BannedTokenStore for RedisBannedTokenStore {
     #[tracing::instrument(name = "add token", skip_all)]
     async fn add_token(&mut self, token: String) -> Result<(), BannedTokenStoreError> {
         let key = get_key(&token);
-        let mut red = self.conn.write().await;
 
-        red.set_ex::<_, _, ()>(&key, true, TOKEN_TTL_SECONDS as u64)
+        self.conn
+            .write()
+            .await
+            .set_ex::<_, _, ()>(&key, true, TOKEN_TTL_SECONDS as u64)
             .wrap_err("failed to set banned token in Redis")
-            .map_err(BannedTokenStoreError::UnexpectedError)?;
+            .map_err(BannedTokenStoreError::UnexpectedError)
 
-        Ok(())
+        // Ok(())
     }
     #[tracing::instrument(name = "contains token", skip_all)]
     async fn contains_token(&self, token: &str) -> Result<bool, BannedTokenStoreError> {

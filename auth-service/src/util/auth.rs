@@ -118,7 +118,7 @@ mod tests {
 
     #[tokio::test]
     async fn test_validate_token_with_valid_token() {
-        let email = Email::parse("test@example.com".to_owned()).unwrap();
+        let email = Email::unwrap("test@example.com");
         let token = generate_auth_token(&email).unwrap();
         let result = validate_token(&token).await.unwrap();
         assert_eq!(result.sub, "test@example.com");

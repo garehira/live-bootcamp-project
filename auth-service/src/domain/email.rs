@@ -1,7 +1,6 @@
 use color_eyre::eyre::Result;
 use secrecy::{ExposeSecret, Secret};
 use std::hash::Hash;
-use std::ops::Deref;
 use thiserror::Error;
 
 #[derive(Debug, Clone)] // Updated!

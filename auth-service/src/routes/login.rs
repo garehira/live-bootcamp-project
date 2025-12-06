@@ -9,7 +9,7 @@ use axum::Json;
 use axum_extra::extract::CookieJar;
 use color_eyre::eyre::eyre;
 use http::StatusCode;
-use secrecy::Secret;
+use secrecy::{ExposeSecret, Secret};
 use serde::{Deserialize, Serialize};
 use std::sync::Arc;
 
@@ -71,7 +71,7 @@ async fn handle_2fa(
     // Finally, we need to return the login attempt ID to the client
     let response = Json(LoginResponse::TwoFactorAuth(TwoFactorAuthResponse {
         message: "2FA required".to_string(),
-        login_attempt_id: login_attempt_id.as_ref().to_string(), // Add the generated login attempt ID
+        login_attempt_id: login_attempt_id.as_ref().expose_secret().to_string(), // Add the generated login attempt ID
     }));
     let status_code = StatusCode::from_u16(206).unwrap();
     Ok((status_code, response))

@@ -5,6 +5,7 @@ use color_eyre::eyre::{eyre, Context};
 use color_eyre::Report;
 use color_eyre::Result;
 use rand::Rng;
+use secrecy::{ExposeSecret, Secret};
 use thiserror::Error;
 use uuid::Uuid;
 
@@ -64,19 +65,24 @@ pub trait TwoFACodeStore: Send + Sync {
         email: &Email,
     ) -> Result<(LoginAttemptId, TwoFACode), TwoFACodeStoreError>;
 }
-#[derive(Debug, PartialEq, Clone, Hash, Eq)]
-pub struct LoginAttemptId(String);
+#[derive(Debug, Clone)]
+pub struct LoginAttemptId(Secret<String>);
 impl LoginAttemptId {
     pub fn parse(id: String) -> Result<Self> {
         // Use the `parse_str` function from the `uuid` crate to ensure `id` is a valid UUID
-        Ok(Self(
+        Ok(Self(Secret::new(
             Uuid::parse_str(&id)
                 .wrap_err("Invalid login attempt id")?
                 .to_string(),
-        ))
+        )))
     }
-    pub fn as_ref(&self) -> &str {
+    pub fn as_ref(&self) -> &Secret<String> {
         &self.0
+    }
+}
+impl PartialEq for LoginAttemptId {
+    fn eq(&self, other: &Self) -> bool {
+        self.0.expose_secret() == other.0.expose_secret()
     }
 }
 
@@ -86,12 +92,12 @@ pub fn test_parse() {
     println!("inpo {}", inpo);
     let l = LoginAttemptId::parse(inpo.to_owned()).unwrap();
     // let l = LoginAttemptId::parse("123456".to_string()).unwrap();
-    println!("l {}", l.as_ref());
+    println!("l {}", l.as_ref().expose_secret());
 }
 impl Default for LoginAttemptId {
     fn default() -> Self {
         // Use the `uuid` crate to generate a random version 4 UUID
-        Self(Uuid::new_v4().to_string())
+        Self(Secret::new(Uuid::new_v4().to_string()))
     }
 }
 

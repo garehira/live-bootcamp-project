@@ -34,7 +34,7 @@ impl TwoFACodeStore for RedisTwoFACodeStore {
         let key = get_key(&email);
         // 2. Create a TwoFATuple instance.
         let fatuple = TwoFATuple(
-            login_attempt_id.as_ref().to_owned(),
+            login_attempt_id.as_ref().expose_secret().to_owned(),
             code.as_ref().to_owned(),
         );
         // 3. Use serde_json::to_string to serialize the TwoFATuple instance into a JSON string.
